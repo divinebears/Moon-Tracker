@@ -50,6 +50,7 @@
                 <!-- Moon Phase Card - Swipeable -->
                 <div class="card moon-hero swipeable-card" data-aspect="phase">
                     <div class="swipe-hint">← Swipe to see other days →</div>
+                    <div class="card-date-label" id="phase-card-date"></div>
                     <div class="label">Current Phase</div>
                     <div class="moon-hero-layout">
                         <div class="moon-visual">
@@ -86,6 +87,7 @@
                 <!-- Moon Mansion Card - Swipeable -->
                 <div class="card mansion-card swipeable-card" data-aspect="mansion">
                     <div class="swipe-hint">← Swipe to see other days →</div>
+                    <div class="card-date-label" id="mansion-card-date"></div>
                     <div class="label">Moon Mansions Today</div>
                     <div class="all-mansions-container" id="all-mansions-container"></div>
                     <div class="swipe-nav">
@@ -97,6 +99,7 @@
                 <!-- Moon in Zodiac Card - Swipeable -->
                 <div class="card zodiac-card swipeable-card" data-aspect="zodiac">
                     <div class="swipe-hint">← Swipe to see other days →</div>
+                    <div class="card-date-label" id="zodiac-card-date"></div>
                     <div class="label">Moon Signs Today</div>
                     <div class="all-signs-container" id="all-signs-container"></div>
                     <div class="swipe-nav">
@@ -108,11 +111,11 @@
                 <!-- Void of Course Card - Swipeable -->
                 <div class="card voc-card swipeable-card" id="voc-card" data-aspect="voc">
                     <div class="swipe-hint">← Swipe to see other days →</div>
+                    <div class="card-date-label" id="voc-card-date"></div>
                     <div class="voc-header">
                         <div class="label clickable" id="voc-label">Moon Void of Course</div>
                         <span class="voc-status" id="voc-status">✓ Clear</span>
                     </div>
-                    <div class="voc-text" id="voc-text">No VOC periods today</div>
                     <div class="voc-timing" id="voc-timing" style="display: none;">
                         <div id="voc-times"></div>
                     </div>
@@ -122,14 +125,20 @@
                     </div>
                 </div>
 
-                <!-- Retrograde Planets Card -->
-                <div class="card retro-card">
+                <!-- Retrograde Planets Card - Swipeable -->
+                <div class="card retro-card swipeable-card" data-aspect="retro">
+                    <div class="swipe-hint">← Swipe to see other days →</div>
+                    <div class="card-date-label" id="retro-card-date"></div>
                     <div class="label">Retrograde Planets</div>
                     <div class="retro-planets" id="retro-planets">
                         <div class="no-retro">No planets in retrograde</div>
                     </div>
                     <div class="mercury-status clickable" id="mercury-status" style="margin-top: 1rem; padding: 0.5rem; background: hsl(var(--muted) / 0.3); border-radius: 0.5rem; text-align: center; display: none;">
                         Mercury is Direct ✓
+                    </div>
+                    <div class="swipe-nav">
+                        <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
+                        <button class="swipe-btn next" data-direction="next">Next Day ▶</button>
                     </div>
                 </div>
             </div>
@@ -191,9 +200,13 @@
 
     <!-- Day Dialog (Monthly View) -->
     <div id="day-dialog" class="dialog-overlay" style="display: none;">
-        <div class="dialog position">
+        <div class="dialog position day-dialog-swipeable">
             <button class="dialog-close" id="close-day-dialog">×</button>
-            <h2 class="dialog-title" id="day-dialog-title"></h2>
+            <div class="day-dialog-nav">
+                <button class="swipe-btn prev" id="day-dialog-prev">◀ Prev Day</button>
+                <h2 class="dialog-title" id="day-dialog-title"></h2>
+                <button class="swipe-btn next" id="day-dialog-next">Next Day ▶</button>
+            </div>
             <div class="day-dialog-items" id="day-dialog-items"></div>
             <button class="expand-daily-btn" id="expand-to-daily">View in Daily Mode →</button>
         </div>
