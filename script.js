@@ -450,43 +450,111 @@ function findRetrogradePeriod(planet, jd) {
     return { start: fromJD(sJD), end: fromJD(eJD) };
 }
 
-// ---- Void of Course ----
-function angleDiff(a, b) {
-    let d = normalize(a - b);
-    if (d > 180) d = 360 - d;
-    return d;
+// ---- Void of Course (astronomy-engine based, Traditional/Classical) ----
+const VOC_PLANETS_AE = [
+    Astronomy.Body.Sun, Astronomy.Body.Mercury, Astronomy.Body.Venus,
+    Astronomy.Body.Mars, Astronomy.Body.Jupiter, Astronomy.Body.Saturn,
+    Astronomy.Body.Uranus, Astronomy.Body.Neptune, Astronomy.Body.Pluto
+];
+const VOC_MAJOR_ASPECTS = [0, 60, 90, 120, 180, 240, 270, 300];
+
+function aeMoonLon(d) { return Astronomy.EclipticGeoMoon(d).lon; }
+function aePlanetLon(body, d) {
+    const v = Astronomy.GeoVector(body, d, true);
+    return Astronomy.Ecliptic(v).elon;
+}
+function aeSignIdx(lon) { return Math.floor(((lon % 360) + 360) % 360 / 30); }
+function aeSignedDelta(a, b) { return ((a - b) % 360 + 360) % 360; }
+function aeUnwrapNear(raw, near) { return raw + 360 * Math.round((near - raw) / 360); }
+
+function aeFindIngresses(start, end) {
+    const results = [];
+    const STEP = 30 * 60000;
+    let ps = aeSignIdx(aeMoonLon(start));
+    let t = start.getTime() + STEP;
+    while (t <= end.getTime()) {
+        const d = new Date(t);
+        const s = aeSignIdx(aeMoonLon(d));
+        if (s !== ps) {
+            let lo = t - STEP, hi = t;
+            for (let i = 0; i < 20; i++) {
+                const mid = (lo + hi) / 2;
+                if (aeSignIdx(aeMoonLon(new Date(mid))) === ps) lo = mid; else hi = mid;
+            }
+            results.push({ time: new Date(hi), signIndex: s });
+        }
+        ps = s;
+        t += STEP;
+    }
+    return results;
 }
 
-const MAJOR_ASPECTS = [0, 60, 90, 120, 180];
-const ASPECT_ORB = 1.5;
-const VOC_PLANETS = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
+function aeFindLastAspect(signEntry, ingressTime) {
+    const STEP = 120000;
+    const entryMs = signEntry.getTime();
+    const endMs = ingressTime.getTime();
+    let lastAspectMs = null;
+    let lastAspectBody = null;
 
-function hasMajorAspect(moonLong, jd) {
-    const sunL = sunLongitude(jd);
-    for (const asp of MAJOR_ASPECTS) {
-        if (Math.abs(angleDiff(moonLong, sunL) - asp) < ASPECT_ORB) return true;
-    }
-    for (const p of VOC_PLANETS) {
-        const pL = planetGeoLongitude(p, jd);
-        for (const asp of MAJOR_ASPECTS) {
-            if (Math.abs(angleDiff(moonLong, pL) - asp) < ASPECT_ORB) return true;
+    const BODY_NAMES = ['Sun','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+
+    for (let bi = 0; bi < VOC_PLANETS_AE.length; bi++) {
+        const body = VOC_PLANETS_AE[bi];
+        const pts = [];
+        let t = entryMs;
+        let prevRel = null;
+        while (t <= endMs) {
+            const d = new Date(t);
+            const rawRel = aeSignedDelta(aeMoonLon(d), aePlanetLon(body, d));
+            const rel = (prevRel === null) ? rawRel : aeUnwrapNear(rawRel, prevRel);
+            pts.push({ t, rel });
+            prevRel = rel;
+            t += STEP;
+        }
+        if (pts[pts.length - 1].t < endMs) {
+            const d = new Date(endMs);
+            const rawRel = aeSignedDelta(aeMoonLon(d), aePlanetLon(body, d));
+            const rel = aeUnwrapNear(rawRel, prevRel === null ? rawRel : prevRel);
+            pts.push({ t: endMs, rel });
+        }
+
+        for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[i], p1 = pts[i + 1];
+            const segMin = Math.min(p0.rel, p1.rel);
+            const segMax = Math.max(p0.rel, p1.rel);
+            if (segMax - segMin < 1e-9) continue;
+            for (const target of VOC_MAJOR_ASPECTS) {
+                const kStart = Math.ceil((segMin - target) / 360);
+                const kEnd = Math.floor((segMax - target) / 360);
+                for (let k = kStart; k <= kEnd; k++) {
+                    const level = target + 360 * k;
+                    let v0 = p0.rel - level, v1 = p1.rel - level;
+                    if (Math.abs(v0) < 1e-9) {
+                        if (lastAspectMs === null || p0.t > lastAspectMs) { lastAspectMs = p0.t; lastAspectBody = BODY_NAMES[bi]; }
+                        continue;
+                    }
+                    if (Math.abs(v1) < 1e-9) {
+                        if (lastAspectMs === null || p1.t > lastAspectMs) { lastAspectMs = p1.t; lastAspectBody = BODY_NAMES[bi]; }
+                        continue;
+                    }
+                    if (v0 * v1 > 0) continue;
+                    let loT = p0.t, hiT = p1.t, loRel = p0.rel, hiRel = p1.rel, loV = v0;
+                    for (let j = 0; j < 24; j++) {
+                        const midT = (loT + hiT) / 2;
+                        const midDate = new Date(midT);
+                        const rawMid = aeSignedDelta(aeMoonLon(midDate), aePlanetLon(body, midDate));
+                        const midRel = aeUnwrapNear(rawMid, (loRel + hiRel) / 2);
+                        const midV = midRel - level;
+                        if (loV * midV <= 0) { hiT = midT; hiRel = midRel; }
+                        else { loT = midT; loRel = midRel; loV = midV; }
+                    }
+                    const exactMs = (loT + hiT) / 2;
+                    if (lastAspectMs === null || exactMs > lastAspectMs) { lastAspectMs = exactMs; lastAspectBody = BODY_NAMES[bi]; }
+                }
+            }
         }
     }
-    return false;
-}
-
-function findLastAspectPlanet(moonLong, jd) {
-    const sunL = sunLongitude(jd);
-    for (const asp of MAJOR_ASPECTS) {
-        if (Math.abs(angleDiff(moonLong, sunL) - asp) < ASPECT_ORB) return 'Sun';
-    }
-    for (const p of VOC_PLANETS) {
-        const pL = planetGeoLongitude(p, jd);
-        for (const asp of MAJOR_ASPECTS) {
-            if (Math.abs(angleDiff(moonLong, pL) - asp) < ASPECT_ORB) return p;
-        }
-    }
-    return null;
+    return lastAspectMs ? { time: new Date(lastAspectMs), planet: lastAspectBody } : null;
 }
 
 // ============================================
@@ -652,60 +720,36 @@ function getMoonVOCForDay(date) {
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
-    const dayStartJD = toJD(dayStart);
-    const dayEndJD = toJD(dayEnd);
-    const scanStart = dayStartJD - 3;
-    const scanEnd = dayEndJD + 1;
-    
-    const signChanges = [];
-    let prevSign = Math.floor(moonLongitude(scanStart) / 30);
-    for (let jd = scanStart + 1/24; jd <= scanEnd; jd += 1/24) {
-        const curSign = Math.floor(moonLongitude(jd) / 30);
-        if (curSign !== prevSign) {
-            let lo = jd - 1/24, hi = jd;
-            for (let i = 0; i < 20; i++) {
-                const mid = (lo + hi) / 2;
-                if (Math.floor(moonLongitude(mid) / 30) !== prevSign) hi = mid;
-                else lo = mid;
-            }
-            signChanges.push((lo + hi) / 2);
-            prevSign = curSign;
-        } else {
-            prevSign = curSign;
-        }
-    }
-    
+
+    // Scan a wide window to find ingresses that produce VOC periods overlapping this day
+    const pad = 5 * 864e5; // 5 days
+    const scanStart = new Date(dayStart.getTime() - pad);
+    const scanEnd = new Date(dayEnd.getTime() + pad);
+    const ingresses = aeFindIngresses(scanStart, scanEnd);
+
     const periods = [];
-    for (const scJD of signChanges) {
-        const signBefore = Math.floor(moonLongitude(scJD - 0.01) / 30);
-        let lastAspectJD = null;
-        let lastPlanet = null;
-        
-        for (let h = 0; h < 288; h++) {
-            const sJD = scJD - h / 48;
-            const ml = moonLongitude(sJD);
-            if (Math.floor(ml / 30) !== signBefore) break;
-            if (hasMajorAspect(ml, sJD)) {
-                lastAspectJD = sJD;
-                lastPlanet = findLastAspectPlanet(ml, sJD);
-                break;
-            }
-        }
-        
-        if (lastAspectJD !== null) {
-            const vocStartJD = Math.max(lastAspectJD, dayStartJD);
-            const vocEndJD = Math.min(scJD, dayEndJD);
-            if (vocEndJD > vocStartJD) {
-                periods.push({
-                    start: fromJD(vocStartJD),
-                    end: fromJD(vocEndJD),
-                    lastAspectPlanet: lastPlanet || 'Sun'
-                });
-            }
+    for (let i = 1; i < ingresses.length; i++) {
+        const prevIng = ingresses[i - 1];
+        const currIng = ingresses[i];
+
+        const result = aeFindLastAspect(prevIng.time, currIng.time);
+        const vocStart = result ? result.time : prevIng.time;
+        const vocEnd = currIng.time;
+
+        // Check if this VOC period overlaps with the requested day
+        if (vocEnd > dayStart && vocStart < dayEnd) {
+            const clippedStart = vocStart < dayStart ? dayStart : vocStart;
+            const clippedEnd = vocEnd > dayEnd ? dayEnd : vocEnd;
+            periods.push({
+                start: clippedStart,
+                end: clippedEnd,
+                lastAspectPlanet: result ? result.planet : 'Unknown'
+            });
         }
     }
     return periods;
 }
+
 
 const ALL_PLANETS_LIST = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
 const PLANET_EMOJIS = { Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '⛢', Neptune: '♆', Pluto: '♇' };
