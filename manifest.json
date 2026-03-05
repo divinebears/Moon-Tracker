@@ -1,7 +1,7 @@
 {
   "name": "Luna Astrology",
   "short_name": "LunaAstro",
-  "start_url": "/Moon-Tracker/index.html",
+  "start_url": "https://yasminemoubasher.github.io/Moon-Tracker/",
   "display": "standalone",
   "background_color": "#000033",
   "theme_color": "#4b0082",
