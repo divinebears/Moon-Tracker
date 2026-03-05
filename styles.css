@@ -85,7 +85,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    font-size: 2rem;
+    font-size: 0.95rem;
     color: hsl(var(--muted-foreground));
 }
 
@@ -100,7 +100,7 @@ body {
     gap: 0.5rem;
     margin-bottom: 1rem;
     color: hsl(var(--muted-foreground));
-    font-size: 2rem;
+    font-size: 1rem;
 }
 
 .location-selector select {
@@ -110,7 +110,7 @@ body {
     padding: 0.4rem 0.75rem;
     border-radius: 0.5rem;
     font-family: inherit;
-    font-size: 2rem;
+    font-size: 0.95rem;
     cursor: pointer;
     max-width: 250px;
 }
@@ -128,7 +128,7 @@ body {
     flex: 1;
     padding: 0.6rem 1rem;
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1rem;
     background: transparent;
     border: none;
     color: hsl(var(--muted-foreground));
@@ -192,7 +192,7 @@ body {
 
 .selected-date {
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     background: linear-gradient(135deg, hsl(var(--moon-silver)), hsl(var(--star-gold)));
     -webkit-background-clip: text;
@@ -204,7 +204,7 @@ body {
     background: transparent;
     border: none;
     color: hsl(var(--accent));
-    font-size: 2rem;
+    font-size: 0.85rem;
     cursor: pointer;
     text-decoration: underline;
     margin-top: 0.25rem;
@@ -226,7 +226,7 @@ body {
 }
 
 .label {
-    font-size: 2rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: hsl(var(--muted-foreground));
@@ -247,7 +247,7 @@ body {
 
 /* Card Date Label */
 .card-date-label {
-    font-size: 2rem;
+    font-size: 0.75rem;
     color: hsl(var(--muted-foreground));
     text-align: center;
     margin-bottom: 0.25rem;
@@ -297,7 +297,7 @@ body {
 
 .swipe-hint {
     text-align: center;
-    font-size: 2rem;
+    font-size: 0.75rem;
     color: hsl(var(--muted-foreground));
     margin-bottom: 0.5rem;
     opacity: 0.7;
@@ -318,7 +318,7 @@ body {
     padding: 0.4rem 0.75rem;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 2rem;
+    font-size: 0.8rem;
     transition: all 0.1s;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -383,7 +383,7 @@ body {
 
 .phase-name {
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 600;
     background: linear-gradient(135deg, hsl(var(--moon-silver)), hsl(var(--star-gold)));
     -webkit-background-clip: text;
@@ -394,7 +394,7 @@ body {
 .illumination {
     color: hsl(var(--muted-foreground));
     margin-top: 0.25rem;
-    font-size: 2rem;
+    font-size: 1rem;
 }
 
 .exact-phase-box {
@@ -403,7 +403,7 @@ body {
     background: hsl(var(--muted) / 0.5);
     border-radius: 0.5rem;
     color: hsl(var(--star-gold));
-    font-size: 2rem;
+    font-size: 0.95rem;
 }
 
 .exact-time {
@@ -427,7 +427,7 @@ body {
 }
 
 .rise-set-time {
-    font-size: 2rem;
+    font-size: 1.35rem;
     font-weight: 600;
     color: hsl(var(--star-gold));
 }
@@ -447,7 +447,7 @@ body {
     background: hsl(var(--muted) / 0.2);
     border-radius: 0.5rem;
     margin-bottom: 0.4rem;
-    font-size: 2rem;
+    font-size: 0.95rem;
 }
 
 .mansion-item:last-child,
@@ -486,13 +486,13 @@ body {
 
 .zodiac-name {
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1.35rem;
     font-weight: 600;
 }
 
 .zodiac-degree {
     color: hsl(var(--muted-foreground));
-    font-size: 2rem;
+    font-size: 0.95rem;
 }
 
 /* Mansion number badge */
@@ -505,7 +505,7 @@ body {
     background: linear-gradient(135deg, hsl(var(--cosmic-purple)), hsl(var(--accent)));
     border-radius: 50%;
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 0.7rem;
     font-weight: 600;
     margin-right: 0.4rem;
     flex-shrink: 0;
@@ -527,7 +527,7 @@ body {
 .voc-status {
     padding: 0.2rem 0.5rem;
     border-radius: 1rem;
-    font-size: 2rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
@@ -544,7 +544,7 @@ body {
 .voc-text {
     color: hsl(var(--muted-foreground));
     line-height: 1.5;
-    font-size: 2rem;
+    font-size: 0.95rem;
 }
 
 .voc-timing {
@@ -556,7 +556,7 @@ body {
 
 .voc-timing p,
 .voc-timing div {
-    font-size: 2rem;
+    font-size: 0.9rem;
     color: hsl(var(--void-red));
 }
 
@@ -594,7 +594,7 @@ body {
 }
 
 .retro-emoji {
-    font-size: 2rem;
+    font-size: 1.35rem;
 }
 
 .retro-info {
@@ -603,11 +603,11 @@ body {
 
 .retro-name {
     font-weight: 600;
-    font-size: 2rem;
+    font-size: 1rem;
 }
 
 .retro-dates {
-    font-size: 2rem;
+    font-size: 0.85rem;
     color: hsl(var(--muted-foreground));
 }
 
@@ -615,7 +615,7 @@ body {
     color: hsl(var(--muted-foreground));
     text-align: center;
     padding: 0.75rem;
-    font-size: 2rem;
+    font-size: 0.95rem;
 }
 
 /* Eclipse Card */
@@ -639,7 +639,7 @@ body {
 }
 
 .eclipse-emoji {
-    font-size: 2rem;
+    font-size: 1.35rem;
     flex-shrink: 0;
 }
 
@@ -649,11 +649,11 @@ body {
 
 .eclipse-name {
     font-weight: 600;
-    font-size: 2rem;
+    font-size: 1rem;
 }
 
 .eclipse-time {
-    font-size: 2rem;
+    font-size: 0.85rem;
     color: hsl(var(--muted-foreground));
 }
 
@@ -661,7 +661,7 @@ body {
     color: hsl(var(--muted-foreground));
     text-align: center;
     padding: 0.5rem;
-    font-size: 2rem;
+    font-size: 0.95rem;
 }
 
 
@@ -675,7 +675,7 @@ body {
 
 .month-title {
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1.3rem;
     font-weight: 600;
     background: linear-gradient(135deg, hsl(var(--moon-silver)), hsl(var(--star-gold)));
     -webkit-background-clip: text;
@@ -696,7 +696,7 @@ body {
 .weekday {
     text-align: center;
     padding: 0.4rem;
-    font-size: 2rem;
+    font-size: 0.8rem;
     color: hsl(var(--muted-foreground));
     font-weight: 500;
 }
@@ -752,17 +752,17 @@ body {
 }
 
 .day-number {
-    font-size: 2rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
 .day-phase {
-    font-size: 2rem;
+    font-size: 1rem;
     margin-top: 1px;
 }
 
 .day-mansions {
-    font-size: 2rem;
+    font-size: 0.55rem;
     color: hsl(var(--cosmic-purple));
     text-align: center;
     line-height: 1.1;
@@ -771,7 +771,7 @@ body {
 }
 
 .day-signs {
-    font-size: 2rem;
+    font-size: 0.55rem;
     color: hsl(var(--muted-foreground));
     text-align: center;
 }
@@ -781,13 +781,13 @@ body {
     margin-top: 1.5rem;
     text-align: center;
     color: hsl(var(--muted-foreground));
-    font-size: 2rem;
+    font-size: 0.85rem;
     padding-bottom: 1rem;
 }
 
 .footer-sub {
     margin-top: 0.25rem;
-    font-size: 2rem;
+    font-size: 0.75rem;
 }
 
 /* Dialogs */
@@ -829,7 +829,7 @@ body {
     background: transparent;
     border: none;
     color: hsl(var(--muted-foreground));
-    font-size: 2rem;
+    font-size: 1.5rem;
     cursor: pointer;
     padding: 0.5rem;
     line-height: 1;
@@ -843,7 +843,7 @@ body {
 
 .dialog-title {
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1.35rem;
     font-weight: 600;
     background: linear-gradient(135deg, hsl(var(--moon-silver)), hsl(var(--star-gold)));
     -webkit-background-clip: text;
@@ -865,14 +865,14 @@ body {
     letter-spacing: 0.1em;
     color: hsl(var(--muted-foreground));
     margin-bottom: 0.4rem;
-    font-size: 2rem;
+    font-size: 0.8rem;
 }
 
 .dialog-section p {
     color: hsl(var(--foreground));
     line-height: 1.5;
     white-space: pre-line;
-    font-size: 2rem;
+    font-size: 1rem;
 }
 
 .dialog-section.good {
@@ -908,7 +908,7 @@ body {
     padding: 0.6rem 0.75rem;
     background: hsl(var(--muted) / 0.3);
     border-radius: 0.5rem;
-    font-size: 2rem;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: background 0.15s;
     -webkit-tap-highlight-color: transparent;
@@ -920,7 +920,7 @@ body {
 }
 
 .day-dialog-item .item-icon {
-    font-size: 2rem;
+    font-size: 1.35rem;
     flex-shrink: 0;
 }
 
@@ -930,7 +930,7 @@ body {
 
 .day-dialog-item .item-arrow {
     color: hsl(var(--muted-foreground));
-    font-size: 2rem;
+    font-size: 0.9rem;
 }
 
 .expand-daily-btn {
@@ -942,7 +942,7 @@ body {
     border-radius: 0.5rem;
     color: hsl(var(--foreground));
     font-family: 'Cinzel', serif;
-    font-size: 2rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.15s;
     -webkit-tap-highlight-color: transparent;
@@ -974,7 +974,7 @@ body {
     padding-right: 0;
     text-align: center;
     flex: 1;
-    font-size: 2rem;
+    font-size: 1.1rem;
 }
 
 .day-dialog-nav .swipe-btn {
@@ -999,7 +999,7 @@ body {
     }
     
     .title {
-        font-size: 2rem;
+        font-size: 1.85rem;
     }
     
     .phase-emoji {
@@ -1007,7 +1007,7 @@ body {
     }
     
     .phase-name {
-        font-size: 2rem;
+        font-size: 1.3rem;
     }
 
     .moon-hero-layout {
@@ -1019,11 +1019,11 @@ body {
     }
     
     .day-number {
-        font-size: 2rem;
+        font-size: 0.7rem;
     }
     
     .day-phase {
-        font-size: 2rem;
+        font-size: 0.85rem;
     }
     
     .day-mansions,
@@ -1048,7 +1048,7 @@ body {
     }
     
     .dialog-title {
-        font-size: 2rem;
+        font-size: 1.15rem;
     }
 
     .day-dialog-nav {
@@ -1058,7 +1058,7 @@ body {
     .day-dialog-nav .dialog-title {
         flex: 1;
         text-align: center;
-        font-size: 2rem;
+        font-size: 0.95rem;
         min-width: 0;
     }
 
@@ -1090,10 +1090,10 @@ body {
     }
     
     .day-number {
-        font-size: 2rem;
+        font-size: 0.9rem;
     }
     
     .day-phase {
-        font-size: 2rem;
+        font-size: 1.2rem;
     }
 }
