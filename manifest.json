@@ -7,12 +7,12 @@
   "theme_color": "#4b0082",
   "icons": [
     {
-      "src": "images/luna.png",
+      "src": "images/app pic1.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "images/luna.png",
+      "src": "images/app pic1.png",
       "sizes": "512x512",
       "type": "image/png"
     }
