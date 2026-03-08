@@ -927,29 +927,7 @@ async function getLocationByIP() {
     }
 
     // Browser geolocation fallback
-    try {
-        const pos = await new Promise((resolve, reject) => {
-            if (!navigator.geolocation) return reject(new Error('No geolocation'));
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-        });
 
-        const lat = toNumber(pos.coords.latitude);
-        const lon = toNumber(pos.coords.longitude);
-        if (lat !== null && lon !== null) {
-            let nearest = CITIES[0];
-            let minDist = Infinity;
-            CITIES.forEach((city) => {
-                const d = Math.pow(city.lat - lat, 2) + Math.pow(city.lon - lon, 2);
-                if (d < minDist) {
-                    minDist = d;
-                    nearest = city;
-                }
-            });
-            return { lat, lon, name: nearest.name, timezone: nearest.tz };
-        }
-    } catch (e) {
-        console.log('Geolocation fallback failed:', e.message);
-    }
 
     // Timezone-based fallback
     const tzMatch = CITIES.find(c => c.tz === fallbackTimezone);
