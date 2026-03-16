@@ -182,6 +182,90 @@ let locationTimezone = "Africa/Casablanca";
 let selectedDate = new Date();
 let currentMonth = new Date();
 let dayDialogDate = null;
+let _updateScheduled = false;
+
+// ============================================
+// VOC PRE-COMPUTATION CACHE
+// ============================================
+const vocCache = new Map();
+let vocCacheReady = false;
+const VOC_CACHE_DAYS = 45;
+
+function getVOCDateKey(date) {
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function getCachedVOC(date) {
+    const key = getVOCDateKey(date);
+    if (vocCache.has(key)) return vocCache.get(key);
+    // Fallback: compute synchronously and cache
+    const result = _computeVOCForDay(date);
+    vocCache.set(key, result);
+    return result;
+}
+
+// Renamed original getMoonVOCForDay to _computeVOCForDay
+function _computeVOCForDay(date) {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const pad = 5 * 864e5;
+    const scanStart = new Date(dayStart.getTime() - pad);
+    const scanEnd = new Date(dayEnd.getTime() + pad);
+    const ingresses = aeFindIngresses(scanStart, scanEnd);
+
+    const periods = [];
+    for (let i = 1; i < ingresses.length; i++) {
+        const prevIng = ingresses[i - 1];
+        const currIng = ingresses[i];
+
+        const result = aeFindLastAspect(prevIng.time, currIng.time);
+        const vocStart = result ? result.time : prevIng.time;
+        const vocEnd = currIng.time;
+
+        if (vocEnd > dayStart && vocStart < dayEnd) {
+            const clippedStart = vocStart < dayStart ? dayStart : vocStart;
+            const clippedEnd = vocEnd > dayEnd ? dayEnd : vocEnd;
+            periods.push({
+                start: clippedStart,
+                end: clippedEnd,
+                lastAspectPlanet: result ? result.planet : 'Unknown'
+            });
+        }
+    }
+    return periods;
+}
+
+function precomputeVOCCache() {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const days = [];
+    for (let i = -VOC_CACHE_DAYS; i <= VOC_CACHE_DAYS; i++) {
+        const d = new Date(today.getTime() + i * 86400000);
+        days.push(d);
+    }
+    let idx = 0;
+    function processChunk() {
+        const chunkSize = 3; // 3 days per frame to stay responsive
+        const end = Math.min(idx + chunkSize, days.length);
+        for (; idx < end; idx++) {
+            const d = days[idx];
+            const key = getVOCDateKey(d);
+            if (!vocCache.has(key)) {
+                vocCache.set(key, _computeVOCForDay(d));
+            }
+        }
+        if (idx < days.length) {
+            setTimeout(processChunk, 0);
+        } else {
+            vocCacheReady = true;
+            console.log('VOC cache ready for ±' + VOC_CACHE_DAYS + ' days');
+        }
+    }
+    setTimeout(processChunk, 100); // start after initial render
+}
 
 // ============================================
 // TIME FORMATTING
@@ -570,7 +654,7 @@ function getMoonPhaseAngle(date) {
     return normalize(moonLongitude(jd) - sunLongitude(jd));
 }
 
-// FIX 3: Widened Full Moon threshold from 174-186 to 168-192 (±12 degrees)
+// Widened Full Moon threshold from 174-186 to 168-192 (±12 degrees)
 function getPhaseInfo(date) {
     const phase = getMoonPhaseAngle(date);
     if (phase < 6 || phase >= 354) return { name: "New Moon", emoji: "🌑" };
@@ -716,36 +800,7 @@ function findSignTransitions(date) {
 }
 
 function getMoonVOCForDay(date) {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(date);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const pad = 5 * 864e5;
-    const scanStart = new Date(dayStart.getTime() - pad);
-    const scanEnd = new Date(dayEnd.getTime() + pad);
-    const ingresses = aeFindIngresses(scanStart, scanEnd);
-
-    const periods = [];
-    for (let i = 1; i < ingresses.length; i++) {
-        const prevIng = ingresses[i - 1];
-        const currIng = ingresses[i];
-
-        const result = aeFindLastAspect(prevIng.time, currIng.time);
-        const vocStart = result ? result.time : prevIng.time;
-        const vocEnd = currIng.time;
-
-        if (vocEnd > dayStart && vocStart < dayEnd) {
-            const clippedStart = vocStart < dayStart ? dayStart : vocStart;
-            const clippedEnd = vocEnd > dayEnd ? dayEnd : vocEnd;
-            periods.push({
-                start: clippedStart,
-                end: clippedEnd,
-                lastAspectPlanet: result ? result.planet : 'Unknown'
-            });
-        }
-    }
-    return periods;
+    return getCachedVOC(date);
 }
 
 
@@ -858,6 +913,9 @@ function getMoonRiseSet(date) {
     return { rise, set };
 }
 
+// ============================================
+// IP LOCATION DETECTION (no browser geolocation prompt)
+// ============================================
 async function getLocationByIP() {
     const fallbackTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Casablanca';
     const toNumber = (value) => {
@@ -926,10 +984,7 @@ async function getLocationByIP() {
         }
     }
 
-    // Browser geolocation fallback
-
-
-    // Timezone-based fallback
+    // Timezone-based fallback (no browser geolocation prompt)
     const tzMatch = CITIES.find(c => c.tz === fallbackTimezone);
     if (tzMatch) {
         return { lat: tzMatch.lat, lon: tzMatch.lon, name: tzMatch.name, timezone: tzMatch.tz };
@@ -956,6 +1011,9 @@ function createStarBackground() {
     }
 }
 
+// ============================================
+// LOCATION SELECTOR
+// ============================================
 async function initLocationSelector() {
     const locationSelect = document.getElementById('location-select');
     if (!locationSelect) return;
@@ -1039,15 +1097,20 @@ function updateCurrentTime() {
     document.getElementById('current-time').textContent = formatTimeInTZ(new Date());
 }
 
+// ============================================
+// FAST DAILY VIEW UPDATE
+// Uses requestAnimationFrame to show date label instantly,
+// then computes heavy astro data on the next frame.
+// ============================================
 function updateDailyView() {
     const date = selectedDate;
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     
+    // Instantly update lightweight UI elements
     document.getElementById('selected-date').textContent = formatDateInTZ(date);
     document.getElementById('return-today').style.display = isToday ? 'none' : 'block';
     
-    // Update card date labels
     const cardDateLabel = formatCardDateLabel(date);
     document.getElementById('phase-card-date').textContent = cardDateLabel;
     document.getElementById('mansion-card-date').textContent = cardDateLabel;
@@ -1055,14 +1118,18 @@ function updateDailyView() {
     document.getElementById('voc-card-date').textContent = cardDateLabel;
     document.getElementById('retro-card-date').textContent = cardDateLabel;
     document.getElementById('eclipse-card-date').textContent = cardDateLabel;
-    
-    // Moon Phase
+
+    // Compute heavy data synchronously but after the DOM paint
+    _computeDailyData(date);
+}
+
+function _computeDailyData(date) {
+    // Phase
     const phaseInfo = getPhaseInfo(date);
     document.getElementById('phase-emoji').textContent = phaseInfo.emoji;
     document.getElementById('phase-name').textContent = phaseInfo.name;
     document.getElementById('illumination').textContent = getIllumination(date) + '% illuminated';
     
-    // Exact phase time
     const exactPhaseBox = document.getElementById('exact-phase-box');
     const phaseTargets = [0, 90, 180, 270];
     const phaseNames = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'];
@@ -1426,7 +1493,7 @@ function showRetroDialog(planet, isRetrograde) {
 }
 
 // ============================================
-// INSTANT SWIPE NAVIGATION (FIX 2: no delay)
+// INSTANT NAVIGATION - no delays
 // ============================================
 function initSwipeNavigation() {
     document.querySelectorAll('.swipeable-card').forEach(card => {
@@ -1434,8 +1501,7 @@ function initSwipeNavigation() {
         const nextBtn = card.querySelector('.swipe-btn.next');
         
         function navigateDay(direction) {
-            // Immediately update date and view - no animation delay
-            selectedDate = new Date(selectedDate.getTime() + (direction === 'next' ? 1 : -1) * 24 * 60 * 60 * 1000);
+            selectedDate = new Date(selectedDate.getTime() + (direction === 'next' ? 1 : -1) * 86400000);
             updateDailyView();
         }
         
@@ -1444,6 +1510,11 @@ function initSwipeNavigation() {
                 e.stopPropagation();
                 navigateDay('prev');
             });
+            prevBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigateDay('prev');
+            }, { passive: false });
         }
         
         if (nextBtn) {
@@ -1451,6 +1522,11 @@ function initSwipeNavigation() {
                 e.stopPropagation();
                 navigateDay('next');
             });
+            nextBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigateDay('next');
+            }, { passive: false });
         }
         
         // Touch swipe
@@ -1536,14 +1612,14 @@ function initDayDialogSwipe() {
 
 function navigateDayDialogPrev() {
     if (dayDialogDate) {
-        dayDialogDate = new Date(dayDialogDate.getTime() - 24 * 60 * 60 * 1000);
+        dayDialogDate = new Date(dayDialogDate.getTime() - 86400000);
         updateDayDialogContent();
     }
 }
 
 function navigateDayDialogNext() {
     if (dayDialogDate) {
-        dayDialogDate = new Date(dayDialogDate.getTime() + 24 * 60 * 60 * 1000);
+        dayDialogDate = new Date(dayDialogDate.getTime() + 86400000);
         updateDayDialogContent();
     }
 }
@@ -1552,12 +1628,12 @@ function navigateDayDialogNext() {
 // DAY NAVIGATION
 // ============================================
 function navigateToPrevDay() {
-    selectedDate = new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000);
+    selectedDate = new Date(selectedDate.getTime() - 86400000);
     updateDailyView();
 }
 
 function navigateToNextDay() {
-    selectedDate = new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000);
+    selectedDate = new Date(selectedDate.getTime() + 86400000);
     updateDailyView();
 }
 
@@ -1572,6 +1648,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initLocationSelector();
     initSwipeNavigation();
     initDayDialogSwipe();
+    precomputeVOCCache();
     setInterval(updateCurrentTime, 60000);
     
     // Tab switching
@@ -1584,9 +1661,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Prev/Next Day buttons next to date
-    document.getElementById('prev-day').addEventListener('click', navigateToPrevDay);
-    document.getElementById('next-day').addEventListener('click', navigateToNextDay);
+    // Prev/Next Day buttons - use both click and touchend for instant response
+    const prevDayBtn = document.getElementById('prev-day');
+    const nextDayBtn = document.getElementById('next-day');
+    
+    prevDayBtn.addEventListener('click', navigateToPrevDay);
+    nextDayBtn.addEventListener('click', navigateToNextDay);
+    prevDayBtn.addEventListener('touchend', (e) => { e.preventDefault(); navigateToPrevDay(); }, { passive: false });
+    nextDayBtn.addEventListener('touchend', (e) => { e.preventDefault(); navigateToNextDay(); }, { passive: false });
     
     // Return to today
     document.getElementById('return-today').addEventListener('click', () => {
@@ -1606,8 +1688,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Day dialog navigation buttons
-    document.getElementById('day-dialog-prev').addEventListener('click', navigateDayDialogPrev);
-    document.getElementById('day-dialog-next').addEventListener('click', navigateDayDialogNext);
+    const dayDialogPrev = document.getElementById('day-dialog-prev');
+    const dayDialogNext = document.getElementById('day-dialog-next');
+    dayDialogPrev.addEventListener('click', navigateDayDialogPrev);
+    dayDialogNext.addEventListener('click', navigateDayDialogNext);
+    dayDialogPrev.addEventListener('touchend', (e) => { e.preventDefault(); navigateDayDialogPrev(); }, { passive: false });
+    dayDialogNext.addEventListener('touchend', (e) => { e.preventDefault(); navigateDayDialogNext(); }, { passive: false });
     
     // Close dialogs
     const dialogClosers = [
