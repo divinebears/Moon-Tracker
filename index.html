@@ -1,6 +1,8 @@
-<!DOCTYPE html>
+
+ <!DOCTYPE html>
 <html lang="en">
-    <link rel="manifest" href="manifest.json">
+        <link rel="manifest" href="manifest.json">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-<!-- Favicon for browsers -->
+    <!-- Favicon for browsers -->
     <link rel="icon" href="images/app pic1.png" sizes="32x32" type="image/png">
 
     <!-- Apple touch icon for iOS home screen -->
@@ -17,6 +19,7 @@
 
     <!-- Manifest for Android / PWA -->
     <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
 </head>
 <body>
@@ -57,42 +60,44 @@
             </div>
 
             <div class="cards-container">
-                <!-- Moon Phase Card -->
-                <div class="card moon-hero swipeable-card" data-aspect="phase">
-                    <div class="swipe-hint">← Swipe to see other days →</div>
-                    <div class="card-date-label" id="phase-card-date"></div>
-                    <div class="label">Current Phase</div>
-                    <div class="moon-hero-layout">
-                        <div class="moon-visual">
-                            <div class="moon-glow"></div>
-                            <div class="phase-emoji" id="phase-emoji">🌕</div>
-                        </div>
-                        <div class="phase-info">
-                            <div class="phase-name clickable" id="phase-name">Full Moon</div>
-                            <div class="illumination" id="illumination">100% illuminated</div>
-                            <div class="exact-phase-box" id="exact-phase-box" style="display: none;">
-                                <span id="exact-phase-label"></span>
-                                <span class="exact-time" id="exact-phase-time"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="rise-set-grid">
-                        <div class="rise-set-item">
-                            <div class="label">Moon Rise</div>
-                            <div class="rise-set-time" id="moon-rise">--:--</div>
-                        </div>
-                        <div class="rise-set-item">
-                            <div class="label">Moon Set</div>
-                            <div class="rise-set-time" id="moon-set">--:--</div>
-                        </div>
-                    </div>
-                    <div class="swipe-nav" style="display: flex; justify-content: space-between; width: 100%;">
-                        <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
-                        <button class="swipe-btn next" data-direction="next">Next Day ▶</button>
-                    </div>
-                </div>
+             <!-- Moon Phase Card - Swipeable -->
+<div class="card moon-hero swipeable-card" data-aspect="phase">
+    <div class="swipe-hint">← Swipe to see other days →</div>
+    <div class="card-date-label" id="phase-card-date"></div>
+    <div class="label">Current Phase</div>
+    <div class="moon-hero-layout">
+        <div class="moon-visual">
+            <div class="moon-glow"></div>
+            <div class="phase-emoji" id="phase-emoji">🌕</div>
+        </div>
+        <div class="phase-info">
+            <div class="phase-name clickable" id="phase-name">Full Moon</div>
+            <div class="illumination" id="illumination">100% illuminated</div>
+            <div class="exact-phase-box" id="exact-phase-box" style="display: none;">
+                <span id="exact-phase-label"></span>
+                <span class="exact-time" id="exact-phase-time"></span>
+            </div>
+        </div>
+    </div>
+    <!-- Rise/Set integrated -->
+    <div class="rise-set-grid">
+        <div class="rise-set-item">
+            <div class="label">Moon Rise</div>
+            <div class="rise-set-time" id="moon-rise">--:--</div>
+        </div>
+        <div class="rise-set-item">
+            <div class="label">Moon Set</div>
+            <div class="rise-set-time" id="moon-set">--:--</div>
+        </div>
+    </div>
+    <!-- Prev/Next at bottom of moon phase section -->
+    <div class="swipe-nav" style="display: flex; justify-content: space-between; width: 100%;">
+        <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
+        <button class="swipe-btn next" data-direction="next">Next Day ▶</button>
+    </div>
+</div>
 
-                <!-- Moon Mansion Card -->
+                <!-- Moon Mansion Card - Swipeable -->
                 <div class="card mansion-card swipeable-card" data-aspect="mansion">
                     <div class="swipe-hint">← Swipe to see other days →</div>
                     <div class="card-date-label" id="mansion-card-date"></div>
@@ -104,7 +109,7 @@
                     </div>
                 </div>
 
-                <!-- Moon in Zodiac Card -->
+                <!-- Moon in Zodiac Card - Swipeable -->
                 <div class="card zodiac-card swipeable-card" data-aspect="zodiac">
                     <div class="swipe-hint">← Swipe to see other days →</div>
                     <div class="card-date-label" id="zodiac-card-date"></div>
@@ -116,7 +121,7 @@
                     </div>
                 </div>
 
-                <!-- Void of Course Card -->
+                <!-- Void of Course Card - Swipeable -->
                 <div class="card voc-card swipeable-card" id="voc-card" data-aspect="voc">
                     <div class="swipe-hint">← Swipe to see other days →</div>
                     <div class="card-date-label" id="voc-card-date"></div>
@@ -133,7 +138,7 @@
                     </div>
                 </div>
 
-                <!-- Retrograde Planets Card -->
+                <!-- Retrograde Planets Card - Swipeable -->
                 <div class="card retro-card swipeable-card" data-aspect="retro">
                     <div class="swipe-hint">← Swipe to see other days →</div>
                     <div class="card-date-label" id="retro-card-date"></div>
@@ -143,22 +148,6 @@
                     </div>
                     <div class="mercury-status clickable" id="mercury-status" style="margin-top: 1rem; padding: 0.5rem; background: hsl(var(--muted) / 0.3); border-radius: 0.5rem; text-align: center; display: none;">
                         Mercury is Direct ✓
-                    </div>
-                    <div class="swipe-nav">
-                        <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
-                        <button class="swipe-btn next" data-direction="next">Next Day ▶</button>
-                    </div>
-                </div>
-
-                <!-- Eclipse Card (SEPARATE) -->
-                <div class="card eclipse-card swipeable-card" id="eclipse-card" data-aspect="eclipse">
-                    <div class="swipe-hint">← Swipe to see other days →</div>
-                    <div class="card-date-label" id="eclipse-card-date"></div>
-                    <div class="label">🌑 Eclipse Information</div>
-                    <div id="eclipse-today-info"></div>
-                    <div class="eclipse-upcoming" id="eclipse-upcoming">
-                        <div class="label" style="margin-top: 0.75rem;">Upcoming Eclipses</div>
-                        <div id="eclipse-upcoming-list"></div>
                     </div>
                     <div class="swipe-nav">
                         <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
