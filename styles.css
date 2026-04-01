@@ -11,6 +11,7 @@
     --star-gold: 45 93% 58%;
     --cosmic-purple: 271 91% 65%;
     --void-red: 0 84% 60%;
+    --eclipse-amber: 30 90% 50%;
 }
 
 * {
@@ -248,7 +249,7 @@ body {
     text-decoration: underline;
 }
 
-/* Card Date Label - Fix 3: Date before each category */
+/* Card Date Label */
 .card-date-label {
     font-size: 0.65rem;
     color: hsl(var(--muted-foreground));
@@ -443,6 +444,7 @@ body {
     border-radius: 0.5rem;
     margin-bottom: 0.4rem;
     font-size: 0.8rem;
+    transition: all 0.3s ease;
 }
 
 .mansion-item:last-child,
@@ -464,6 +466,47 @@ body {
 .mansion-item-time,
 .sign-item-time {
     color: hsl(var(--muted-foreground));
+}
+
+/* Current active highlighting */
+.mansion-item.current-active,
+.sign-item.current-active {
+    background: linear-gradient(135deg, hsl(var(--star-gold) / 0.15), hsl(var(--star-gold) / 0.05));
+    border: 1px solid hsl(var(--star-gold) / 0.4);
+    box-shadow: 0 0 8px hsl(var(--star-gold) / 0.2);
+}
+
+.mansion-item.current-active .mansion-item-name,
+.sign-item.current-active .sign-item-name {
+    color: hsl(var(--star-gold));
+    font-weight: 600;
+}
+
+.mansion-item.current-active .mansion-item-time,
+.sign-item.current-active .sign-item-time {
+    color: hsl(var(--star-gold) / 0.8);
+}
+
+/* Past item dimming */
+.mansion-item.past-item,
+.sign-item.past-item {
+    opacity: 0.5;
+}
+
+/* Day dialog item highlighting */
+.day-dialog-item.current-active {
+    background: linear-gradient(135deg, hsl(var(--star-gold) / 0.15), hsl(var(--star-gold) / 0.05));
+    border: 1px solid hsl(var(--star-gold) / 0.4);
+    box-shadow: 0 0 8px hsl(var(--star-gold) / 0.2);
+}
+
+.day-dialog-item.current-active .item-text {
+    color: hsl(var(--star-gold));
+    font-weight: 600;
+}
+
+.day-dialog-item.past-item {
+    opacity: 0.5;
 }
 
 /* Zodiac Card */
@@ -560,6 +603,75 @@ body {
 
 .voc-period-item:last-child {
     border-bottom: none;
+}
+
+/* Eclipse Card */
+.eclipse-card {
+    border-color: hsl(var(--eclipse-amber) / 0.2);
+}
+
+.eclipse-card.eclipse-active {
+    background: linear-gradient(135deg, hsl(var(--eclipse-amber) / 0.1) 0%, hsl(var(--card)) 100%);
+    border-color: hsl(var(--eclipse-amber) / 0.4);
+}
+
+.eclipse-content {
+    margin-top: 0.25rem;
+}
+
+.no-eclipse {
+    color: hsl(var(--muted-foreground));
+    text-align: center;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.eclipse-info {
+    padding: 0.5rem;
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 0.5rem;
+}
+
+.eclipse-type {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: hsl(var(--eclipse-amber));
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.eclipse-timing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.eclipse-timing-item {
+    text-align: center;
+    padding: 0.3rem;
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 0.25rem;
+}
+
+.eclipse-timing-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: hsl(var(--muted-foreground));
+}
+
+.eclipse-timing-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: hsl(var(--eclipse-amber));
+}
+
+.eclipse-next {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    text-align: center;
 }
 
 /* Retro Card */
@@ -715,6 +827,12 @@ body {
     text-align: center;
 }
 
+.day-eclipse-indicator {
+    font-size: 0.5rem;
+    color: hsl(var(--eclipse-amber));
+    text-align: center;
+}
+
 /* Footer */
 .footer {
     margin-top: 1.5rem;
@@ -830,12 +948,28 @@ body {
     color: hsl(var(--void-red));
 }
 
-/* Day dialog items - clickable list */
+/* Day dialog items - clickable list - SCROLLABLE */
 .day-dialog-items {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
     margin-bottom: 0.75rem;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.day-dialog-items::-webkit-scrollbar {
+    width: 4px;
+}
+
+.day-dialog-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.day-dialog-items::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 2px;
 }
 
 .day-dialog-item {
@@ -847,7 +981,9 @@ body {
     border-radius: 0.5rem;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    border: 1px solid transparent;
 }
 
 .day-dialog-item:hover {
@@ -951,7 +1087,8 @@ body {
     }
     
     .day-mansions,
-    .day-signs {
+    .day-signs,
+    .day-eclipse-indicator {
         display: none;
     }
     
@@ -987,6 +1124,10 @@ body {
 
     .day-dialog-nav .swipe-btn {
         flex: 1;
+    }
+
+    .day-dialog-items {
+        max-height: 50vh;
     }
 }
 
