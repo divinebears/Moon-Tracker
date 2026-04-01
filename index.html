@@ -1,8 +1,8 @@
 
+
  <!DOCTYPE html>
 <html lang="en">
-        <link rel="manifest" href="manifest.json">
-
+  <link rel="manifest" href="manifest.json">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <!-- Favicon for browsers -->
+ <!-- Favicon for browsers -->
     <link rel="icon" href="images/app pic1.png" sizes="32x32" type="image/png">
 
     <!-- Apple touch icon for iOS home screen -->
@@ -21,6 +21,7 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+ 
 </head>
 <body>
     <div id="star-background"></div>
@@ -132,6 +133,21 @@
                     <div class="voc-timing" id="voc-timing" style="display: none;">
                         <div id="voc-times"></div>
                     </div>
+                    <div class="swipe-nav">
+                        <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
+                        <button class="swipe-btn next" data-direction="next">Next Day ▶</button>
+                    </div>
+                </div>
+
+                <!-- Eclipse Card - Swipeable -->
+                <div class="card eclipse-card swipeable-card" id="eclipse-card" data-aspect="eclipse">
+                    <div class="swipe-hint">← Swipe to see other days →</div>
+                    <div class="card-date-label" id="eclipse-card-date"></div>
+                    <div class="label">Lunar Eclipse</div>
+                    <div class="eclipse-content" id="eclipse-content">
+                        <div class="no-eclipse">No lunar eclipse on this day</div>
+                    </div>
+                    <div class="eclipse-next" id="eclipse-next"></div>
                     <div class="swipe-nav">
                         <button class="swipe-btn prev" data-direction="prev">◀ Prev Day</button>
                         <button class="swipe-btn next" data-direction="next">Next Day ▶</button>
@@ -279,6 +295,17 @@
             <h2 class="dialog-title" id="retro-dialog-title"></h2>
             <div class="dialog-section">
                 <p id="retro-dialog-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eclipse Explanation Dialog -->
+    <div id="eclipse-dialog" class="dialog-overlay dialog-secondary" style="display: none;">
+        <div class="dialog position">
+            <button class="dialog-close" id="close-eclipse-dialog">×</button>
+            <h2 class="dialog-title" id="eclipse-dialog-title">Lunar Eclipse</h2>
+            <div class="dialog-section">
+                <p id="eclipse-dialog-text"></p>
             </div>
         </div>
     </div>
