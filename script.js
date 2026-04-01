@@ -177,8 +177,8 @@ const CITIES = [
 // ============================================
 let LAT = 33.5731;
 let LON = -7.5898;
-let locationName = "Casablanca, Morocco";
-let locationTimezone = "Africa/Casablanca";
+let locationName = "";
+let locationTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 let selectedDate = new Date();
 let currentMonth = new Date();
 let dayDialogDate = null;
@@ -724,8 +724,51 @@ let vocPrecalcWindow = { min: null, max: null, tz: null };
 let vocRenderToken = 0;
 let vocWorker = null;
 
+function resetVOCState() {
+    Object.keys(vocCache).forEach(k => delete vocCache[k]);
+    vocPendingCallbacks.clear();
+    vocPrecalcWindow = { min: null, max: null, tz: null };
+    vocRenderToken++;
+    if (vocWorker) {
+        vocWorker.terminate();
+        vocWorker = null;
+    }
+}
+
 function getVOCDayStartMs(date) {
     const d = new Date(date);
+    try {
+        // Get the date components in the selected timezone
+        const fmt = new Intl.DateTimeFormat('en-US', {
+            timeZone: locationTimezone,
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+        const parts = fmt.formatToParts(d);
+        const y = parseInt(parts.find(p => p.type === 'year').value);
+        const m = parseInt(parts.find(p => p.type === 'month').value) - 1;
+        const dy = parseInt(parts.find(p => p.type === 'day').value);
+
+        // Build an approximate UTC midnight, then scan offsets to find true local midnight
+        const approxUTC = Date.UTC(y, m, dy, 0, 0, 0);
+        const testFmt = new Intl.DateTimeFormat('en-US', {
+            timeZone: locationTimezone,
+            hour: 'numeric', minute: 'numeric', hour12: false,
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+        // Scan from UTC-14 to UTC+14 in 15-min steps
+        for (let off = -14 * 60; off <= 14 * 60; off += 15) {
+            const candidate = approxUTC + off * 60000;
+            const cp = testFmt.formatToParts(new Date(candidate));
+            const ch = parseInt(cp.find(p => p.type === 'hour').value);
+            const cm = parseInt(cp.find(p => p.type === 'minute').value);
+            const cd = parseInt(cp.find(p => p.type === 'day').value);
+            const cmo = parseInt(cp.find(p => p.type === 'month').value) - 1;
+            if ((ch === 0 || ch === 24) && cm === 0 && cd === dy && cmo === m) {
+                return candidate;
+            }
+        }
+    } catch (e) {}
+    // Fallback: browser-local midnight
     d.setHours(0, 0, 0, 0);
     return d.getTime();
 }
@@ -1073,6 +1116,92 @@ function renderVOC(vocPeriods, vocCard, vocStatus, vocTiming, vocTimes) {
     }
 }
 
+// ============================================
+// TIME STATUS HELPER (for highlighting current/past items)
+// ============================================
+function getItemTimeStatus(startTime, endTime, viewDate) {
+    const now = new Date();
+    // Check if viewDate is today in the selected timezone
+    const viewDateStr = viewDate.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+    const nowDateStr = now.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+    if (viewDateStr !== nowDateStr) return 'none'; // not today, no highlighting
+    if (now >= startTime && now <= endTime) return 'current';
+    if (now > endTime) return 'past';
+    return 'future';
+}
+
+// ============================================
+// LUNAR ECLIPSE CALCULATIONS
+// ============================================
+const ECLIPSE_EXPLANATIONS = {
+    "Total": "A Total Lunar Eclipse occurs when the Earth moves between the Sun and the Moon, and the Earth's shadow completely covers the Moon. The Moon often turns a deep red or copper color, earning it the name 'Blood Moon.'\n\nThis is a powerful time for endings, revelations, and deep emotional transformation. Secrets may come to light, and what has been hidden is revealed.\n\nTotal lunar eclipses are considered the most potent eclipse events astrologically.",
+    "Partial": "A Partial Lunar Eclipse occurs when only a portion of the Moon passes through the Earth's umbral shadow.\n\nThis brings a gentler but still significant energy of change and revelation. It may trigger partial shifts in your life — not as dramatic as a total eclipse, but still meaningful.\n\nIt's a good time to reflect on what needs to be released or adjusted.",
+    "Penumbral": "A Penumbral Lunar Eclipse occurs when the Moon passes through the Earth's penumbral shadow, causing a subtle dimming.\n\nThe effects are more subtle and internal. You may feel a gentle shift in awareness or a quiet nudge to pay attention to emotional undercurrents.\n\nThis is a time for quiet introspection and subtle emotional processing."
+};
+
+function findLunarEclipseForDate(date) {
+    try {
+        // Search for eclipses around this date
+        const searchStart = new Date(date);
+        searchStart.setHours(0, 0, 0, 0);
+        const searchEnd = new Date(date);
+        searchEnd.setHours(23, 59, 59, 999);
+        
+        // Search from 2 days before to catch eclipses that span midnight
+        const scanStart = new Date(searchStart.getTime() - 2 * 86400000);
+        let eclipse = Astronomy.SearchLunarEclipse(scanStart);
+        
+        // Check up to 3 eclipses to find one on this date
+        for (let i = 0; i < 3; i++) {
+            if (!eclipse) break;
+            const peakDate = eclipse.peak.date;
+            // Check if the eclipse peak falls on this day in the selected timezone
+            const peakDateStr = peakDate.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+            const targetDateStr = date.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+            
+            if (peakDateStr === targetDateStr) {
+                return eclipse;
+            }
+            // If eclipse is past this date, stop searching
+            if (peakDate > searchEnd && peakDate.getTime() - searchEnd.getTime() > 86400000) break;
+            eclipse = Astronomy.NextLunarEclipse(eclipse.peak);
+        }
+    } catch (e) {
+        console.log('Eclipse search error:', e);
+    }
+    return null;
+}
+
+function findNextLunarEclipse(date) {
+    try {
+        let eclipse = Astronomy.SearchLunarEclipse(date);
+        if (eclipse && eclipse.peak.date < date) {
+            eclipse = Astronomy.NextLunarEclipse(eclipse.peak);
+        }
+        return eclipse;
+    } catch (e) {
+        return null;
+    }
+}
+
+function getEclipseTypeName(kind) {
+    switch (kind) {
+        case 'total': return 'Total';
+        case 'partial': return 'Partial';
+        case 'penumbral': return 'Penumbral';
+        default: return kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : 'Unknown';
+    }
+}
+
+function getEclipseEmoji(kind) {
+    switch (kind) {
+        case 'total': return '🌑';
+        case 'partial': return '🌘';
+        case 'penumbral': return '🌗';
+        default: return '🌒';
+    }
+}
+
 
 const ALL_PLANETS_LIST = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
 const PLANET_EMOJIS = { Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '⛢', Neptune: '♆', Pluto: '♇' };
@@ -1115,20 +1244,31 @@ function getMoonRiseSet(date) {
 }
 
 async function getLocationByIP() {
+    // Try ipapi.co
     try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        if (data.latitude && data.longitude) {
-            return {
-                lat: data.latitude,
-                lon: data.longitude,
-                name: `${data.city}, ${data.country_name}`,
-                timezone: data.timezone
-            };
+        const r1 = await fetch('https://ipapi.co/json/');
+        const d1 = await r1.json();
+        if (d1.latitude && d1.longitude) {
+            return { lat: d1.latitude, lon: d1.longitude, name: `${d1.city}, ${d1.country_name}`, timezone: d1.timezone };
         }
-    } catch (e) {
-        console.log('Could not detect location by IP');
-    }
+    } catch (e) { console.log('ipapi.co failed'); }
+    // Fallback: ip-api.com
+    try {
+        const r2 = await fetch('http://ip-api.com/json/?fields=lat,lon,city,country,timezone');
+        const d2 = await r2.json();
+        if (d2.lat && d2.lon) {
+            return { lat: d2.lat, lon: d2.lon, name: `${d2.city}, ${d2.country}`, timezone: d2.timezone };
+        }
+    } catch (e) { console.log('ip-api.com failed'); }
+    // Fallback: ipinfo.io
+    try {
+        const r3 = await fetch('https://ipinfo.io/json');
+        const d3 = await r3.json();
+        if (d3.loc) {
+            const [lat, lon] = d3.loc.split(',').map(Number);
+            return { lat, lon, name: `${d3.city}, ${d3.country}`, timezone: d3.timezone };
+        }
+    } catch (e) { console.log('ipinfo.io failed'); }
     return null;
 }
 
@@ -1211,7 +1351,8 @@ async function initLocationSelector() {
             }
         }
     } else {
-        detectOption.textContent = '📍 Location detection unavailable';
+        detectOption.textContent = '⚠️ Please select your location';
+        detectOption.disabled = true;
         const savedLocation = localStorage.getItem('selectedLocation');
         if (savedLocation && savedLocation !== 'detect') {
             const savedIndex = parseInt(savedLocation);
@@ -1220,10 +1361,15 @@ async function initLocationSelector() {
                 updateLocationFromCity(savedIndex);
             }
         } else {
-            const casablancaIndex = CITIES.findIndex(c => c.name.includes('Casablanca'));
-            if (casablancaIndex >= 0) {
-                locationSelect.value = casablancaIndex;
-                updateLocationFromCity(casablancaIndex);
+            // Try matching browser timezone to a city
+            const browserTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const tzMatch = CITIES.findIndex(c => c.tz === browserTZ);
+            if (tzMatch >= 0) {
+                locationSelect.value = tzMatch;
+                updateLocationFromCity(tzMatch);
+            } else {
+                locationSelect.value = 0;
+                updateLocationFromCity(0);
             }
         }
     }
@@ -1238,6 +1384,7 @@ async function initLocationSelector() {
                 locationName = option.dataset.name;
                 locationTimezone = option.dataset.tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
                 localStorage.setItem('selectedLocation', 'detect');
+                resetVOCState();
                 updateCurrentTime();
                 updateDailyView();
                 updateMonthlyCalendar();
@@ -1257,6 +1404,7 @@ function updateLocationFromCity(cityIndex) {
         LON = city.lon;
         locationName = city.name;
         locationTimezone = city.tz;
+        resetVOCState();
         updateCurrentTime();
         updateDailyView();
         updateMonthlyCalendar();
@@ -1283,6 +1431,7 @@ function updateDailyView() {
     document.getElementById('zodiac-card-date').textContent = cardDateLabel;
     document.getElementById('voc-card-date').textContent = cardDateLabel;
     document.getElementById('retro-card-date').textContent = cardDateLabel;
+    document.getElementById('eclipse-card-date').textContent = cardDateLabel;
     
     // Moon Phase
     const phaseInfo = getPhaseInfo(date);
@@ -1328,8 +1477,11 @@ function updateDailyView() {
         const endStr = formatTimeInTZ(trans.endTime);
         const signItem = document.createElement('div');
         signItem.className = 'sign-item';
+        const signStatus = getItemTimeStatus(trans.startTime, trans.endTime, date);
+        if (signStatus === 'current') signItem.classList.add('current-active');
+        else if (signStatus === 'past') signItem.classList.add('past-item');
         signItem.innerHTML = `
-            <span class="sign-item-name" data-sign="${trans.sign.name}">${trans.sign.emoji} ${trans.sign.name}</span>
+            <span class="sign-item-name" data-sign="${trans.sign.name}">${trans.sign.emoji} ${trans.sign.name}${signStatus === 'current' ? ' \u2605' : ''}</span>
             <span class="sign-item-time">${startStr} - ${endStr}</span>
         `;
         signItem.querySelector('.sign-item-name').addEventListener('click', () => {
@@ -1347,8 +1499,11 @@ function updateDailyView() {
         const endStr = formatTimeInTZ(trans.endTime);
         const mansionItem = document.createElement('div');
         mansionItem.className = 'mansion-item';
+        const mansionStatus = getItemTimeStatus(trans.startTime, trans.endTime, date);
+        if (mansionStatus === 'current') mansionItem.classList.add('current-active');
+        else if (mansionStatus === 'past') mansionItem.classList.add('past-item');
         mansionItem.innerHTML = `
-            <span class="mansion-item-name"><span class="mansion-number-badge">${trans.mansion.number}</span>${trans.mansion.name}</span>
+            <span class="mansion-item-name"><span class="mansion-number-badge">${trans.mansion.number}</span>${trans.mansion.name}${mansionStatus === 'current' ? ' \u2605' : ''}</span>
             <span class="mansion-item-time">${startStr} - ${endStr}</span>
         `;
         mansionItem.querySelector('.mansion-item-name').addEventListener('click', () => {
@@ -1359,6 +1514,9 @@ function updateDailyView() {
     
     // VOC - load asynchronously to keep UI responsive
     updateVOCAsync(date);
+    
+    // Eclipse
+    updateEclipseCard(date);
     
     // Retrograde planets
     const retroPlanets = getRetrogradePlanets(date);
@@ -1392,6 +1550,66 @@ function updateDailyView() {
     } else {
         mercuryStatus.style.display = 'none';
     }
+}
+
+function updateEclipseCard(date) {
+    const eclipseContent = document.getElementById('eclipse-content');
+    const eclipseNext = document.getElementById('eclipse-next');
+    const eclipseCard = document.getElementById('eclipse-card');
+    
+    const eclipse = findLunarEclipseForDate(date);
+    
+    if (eclipse) {
+        eclipseCard.classList.add('eclipse-active');
+        const typeName = getEclipseTypeName(eclipse.kind);
+        const emoji = getEclipseEmoji(eclipse.kind);
+        
+        let timingHTML = '<div class="eclipse-timing-grid">';
+        if (eclipse.sd_penum && eclipse.sd_penum > 0) {
+            const penumStart = new Date(eclipse.peak.date.getTime() - eclipse.sd_penum * 60000);
+            const penumEnd = new Date(eclipse.peak.date.getTime() + eclipse.sd_penum * 60000);
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Penumbral Start</div><div class="eclipse-timing-value">' + formatTimeInTZ(penumStart) + '</div></div>';
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Penumbral End</div><div class="eclipse-timing-value">' + formatTimeInTZ(penumEnd) + '</div></div>';
+        }
+        if (eclipse.sd_partial && eclipse.sd_partial > 0) {
+            const partialStart = new Date(eclipse.peak.date.getTime() - eclipse.sd_partial * 60000);
+            const partialEnd = new Date(eclipse.peak.date.getTime() + eclipse.sd_partial * 60000);
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Partial Start</div><div class="eclipse-timing-value">' + formatTimeInTZ(partialStart) + '</div></div>';
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Partial End</div><div class="eclipse-timing-value">' + formatTimeInTZ(partialEnd) + '</div></div>';
+        }
+        if (eclipse.sd_total && eclipse.sd_total > 0) {
+            const totalStart = new Date(eclipse.peak.date.getTime() - eclipse.sd_total * 60000);
+            const totalEnd = new Date(eclipse.peak.date.getTime() + eclipse.sd_total * 60000);
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Total Start</div><div class="eclipse-timing-value">' + formatTimeInTZ(totalStart) + '</div></div>';
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Total End</div><div class="eclipse-timing-value">' + formatTimeInTZ(totalEnd) + '</div></div>';
+        }
+        timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Peak</div><div class="eclipse-timing-value">' + formatTimeInTZ(eclipse.peak.date) + '</div></div>';
+        if (eclipse.sd_penum && eclipse.sd_penum > 0) {
+            timingHTML += '<div class="eclipse-timing-item"><div class="eclipse-timing-label">Duration</div><div class="eclipse-timing-value">' + Math.round(eclipse.sd_penum * 2) + ' min</div></div>';
+        }
+        timingHTML += '</div>';
+        
+        eclipseContent.innerHTML = '<div class="eclipse-info"><div class="eclipse-type">' + emoji + ' ' + typeName + ' Lunar Eclipse</div>' + timingHTML + '</div>';
+        eclipseNext.innerHTML = '';
+    } else {
+        eclipseCard.classList.remove('eclipse-active');
+        eclipseContent.innerHTML = '<div class="no-eclipse">No lunar eclipse on this day</div>';
+        
+        const nextEclipse = findNextLunarEclipse(date);
+        if (nextEclipse) {
+            const typeName = getEclipseTypeName(nextEclipse.kind);
+            eclipseNext.innerHTML = 'Next: ' + typeName + ' Lunar Eclipse on ' + formatDateInTZ(nextEclipse.peak.date);
+        } else {
+            eclipseNext.innerHTML = '';
+        }
+    }
+}
+
+function showEclipseDialog(kind) {
+    const typeName = getEclipseTypeName(kind);
+    document.getElementById('eclipse-dialog-title').textContent = typeName + ' Lunar Eclipse';
+    document.getElementById('eclipse-dialog-text').textContent = ECLIPSE_EXPLANATIONS[typeName] || 'A lunar eclipse occurs when the Earth passes between the Sun and the Moon.';
+    document.getElementById('eclipse-dialog').style.display = 'flex';
 }
 
 function updateMonthlyCalendar() {
@@ -1429,11 +1647,15 @@ function updateMonthlyCalendar() {
         if (date.toDateString() === today.toDateString()) cell.classList.add('today');
         if (date.toDateString() === selectedDate.toDateString()) cell.classList.add('selected');
         
+        const dayEclipse = findLunarEclipseForDate(date);
+        const eclipseInd = dayEclipse ? '<div class="day-eclipse-indicator">' + getEclipseEmoji(dayEclipse.kind) + '</div>' : '';
+        
         cell.innerHTML = `
             <div class="day-number">${day}</div>
             <div class="day-phase">${phaseInfo.emoji}</div>
             <div class="day-signs">${signEmojis}</div>
             <div class="day-mansions">${mansionTransitions.length > 1 ? mansionTransitions.length + ' mansions' : ''}</div>
+            ${eclipseInd}
         `;
         cell.addEventListener('click', () => showDayDialog(date));
         container.appendChild(cell);
@@ -1496,23 +1718,49 @@ function updateDayDialogContent() {
     
     // Moon Mansions
     mansionTransitions.forEach(trans => {
+        const mStat = getItemTimeStatus(trans.startTime, trans.endTime, date);
         const mansionItem = createDayDialogItem(
             '🏛️',
             `${trans.mansion.number}. ${trans.mansion.name} (${formatTimeInTZ(trans.startTime)} - ${formatTimeInTZ(trans.endTime)})`,
             () => showMansionDialog(trans.mansion)
         );
+        if (mStat === 'current') mansionItem.classList.add('current-active');
+        else if (mStat === 'past') mansionItem.classList.add('past-item');
         itemsContainer.appendChild(mansionItem);
     });
     
     // Moon Signs
     signTransitions.forEach(trans => {
+        const sStat = getItemTimeStatus(trans.startTime, trans.endTime, date);
         const signItem = createDayDialogItem(
             trans.sign.emoji,
             `Moon in ${trans.sign.name} (${formatTimeInTZ(trans.startTime)} - ${formatTimeInTZ(trans.endTime)})`,
             () => showZodiacDialog(trans.sign.name)
         );
+        if (sStat === 'current') signItem.classList.add('current-active');
+        else if (sStat === 'past') signItem.classList.add('past-item');
         itemsContainer.appendChild(signItem);
     });
+    
+    // Eclipse in day dialog
+    const dayEclipse2 = findLunarEclipseForDate(date);
+    if (dayEclipse2) {
+        const eTypeName = getEclipseTypeName(dayEclipse2.kind);
+        const eEmoji = getEclipseEmoji(dayEclipse2.kind);
+        let eText = eTypeName + ' Lunar Eclipse - Peak: ' + formatTimeInTZ(dayEclipse2.peak.date);
+        if (dayEclipse2.sd_partial && dayEclipse2.sd_partial > 0) {
+            const pS = new Date(dayEclipse2.peak.date.getTime() - dayEclipse2.sd_partial * 60000);
+            const pE = new Date(dayEclipse2.peak.date.getTime() + dayEclipse2.sd_partial * 60000);
+            eText += ' | Partial: ' + formatTimeInTZ(pS) + ' - ' + formatTimeInTZ(pE);
+        }
+        if (dayEclipse2.sd_total && dayEclipse2.sd_total > 0) {
+            const tS = new Date(dayEclipse2.peak.date.getTime() - dayEclipse2.sd_total * 60000);
+            const tE = new Date(dayEclipse2.peak.date.getTime() + dayEclipse2.sd_total * 60000);
+            eText += ' | Total: ' + formatTimeInTZ(tS) + ' - ' + formatTimeInTZ(tE);
+        }
+        const eclipseItem = createDayDialogItem(eEmoji, eText, () => showEclipseDialog(dayEclipse2.kind));
+        itemsContainer.appendChild(eclipseItem);
+    }
     
     // Moon Void of Course - Only show if there are VOC periods
     if (vocPeriods.length > 0) {
@@ -1808,7 +2056,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { close: 'close-phase-dialog', overlay: 'phase-dialog' },
         { close: 'close-zodiac-dialog', overlay: 'zodiac-dialog' },
         { close: 'close-mercury-dialog', overlay: 'mercury-dialog' },
-        { close: 'close-retro-dialog', overlay: 'retro-dialog' }
+        { close: 'close-retro-dialog', overlay: 'retro-dialog' },
+        { close: 'close-eclipse-dialog', overlay: 'eclipse-dialog' }
     ];
     
     dialogClosers.forEach(({ close, overlay }) => {
