@@ -36,18 +36,18 @@ const MOON_MANSIONS = [
 // ZODIAC SIGNS DATA
 // ============================================
 const ZODIAC_SIGNS = [
-    { name: "Aries", emoji: "♈", element: "fire" },
-    { name: "Taurus", emoji: "♉", element: "earth" },
-    { name: "Gemini", emoji: "♊", element: "air" },
-    { name: "Cancer", emoji: "♋", element: "water" },
-    { name: "Leo", emoji: "♌", element: "fire" },
-    { name: "Virgo", emoji: "♍", element: "earth" },
-    { name: "Libra", emoji: "♎", element: "air" },
-    { name: "Scorpio", emoji: "♏", element: "water" },
-    { name: "Sagittarius", emoji: "♐", element: "fire" },
-    { name: "Capricorn", emoji: "♑", element: "earth" },
-    { name: "Aquarius", emoji: "♒", element: "air" },
-    { name: "Pisces", emoji: "♓", element: "water" }
+    { name: "Aries", emoji: "â™ˆ", element: "fire" },
+    { name: "Taurus", emoji: "â™‰", element: "earth" },
+    { name: "Gemini", emoji: "â™Š", element: "air" },
+    { name: "Cancer", emoji: "â™‹", element: "water" },
+    { name: "Leo", emoji: "â™Œ", element: "fire" },
+    { name: "Virgo", emoji: "â™", element: "earth" },
+    { name: "Libra", emoji: "â™Ž", element: "air" },
+    { name: "Scorpio", emoji: "â™", element: "water" },
+    { name: "Sagittarius", emoji: "â™", element: "fire" },
+    { name: "Capricorn", emoji: "â™‘", element: "earth" },
+    { name: "Aquarius", emoji: "â™’", element: "air" },
+    { name: "Pisces", emoji: "â™“", element: "water" }
 ];
 
 // ============================================
@@ -156,7 +156,7 @@ const CITIES = [
     { name: "Sydney, Australia", lat: -33.8688, lon: 151.2093, tz: "Australia/Sydney" },
     { name: "Melbourne, Australia", lat: -37.8136, lon: 144.9631, tz: "Australia/Melbourne" },
     { name: "Auckland, New Zealand", lat: -36.8485, lon: 174.7633, tz: "Pacific/Auckland" },
-    { name: "São Paulo, Brazil", lat: -23.5505, lon: -46.6333, tz: "America/Sao_Paulo" },
+    { name: "SÃ£o Paulo, Brazil", lat: -23.5505, lon: -46.6333, tz: "America/Sao_Paulo" },
     { name: "Mexico City, Mexico", lat: 19.4326, lon: -99.1332, tz: "America/Mexico_City" },
     { name: "Buenos Aires, Argentina", lat: -34.6037, lon: -58.3816, tz: "America/Argentina/Buenos_Aires" },
     { name: "Cairo, Egypt", lat: 30.0444, lon: 31.2357, tz: "Africa/Cairo" },
@@ -182,6 +182,7 @@ let locationTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 let selectedDate = new Date();
 let currentMonth = new Date();
 let dayDialogDate = null;
+let monthPickerYear = new Date().getFullYear();
 
 // ============================================
 // TIME FORMATTING
@@ -237,7 +238,6 @@ function formatShortDateInTZ(date) {
     }
 }
 
-// Fix 3: Format date for card labels (smaller, shorter format)
 function formatCardDateLabel(date) {
     try {
         return date.toLocaleDateString('en-US', {
@@ -573,14 +573,14 @@ function getMoonPhaseAngle(date) {
 
 function getPhaseInfo(date) {
     const phase = getMoonPhaseAngle(date);
-    if (phase < 6 || phase >= 354) return { name: "New Moon", emoji: "🌑" };
-    if (phase < 84) return { name: "Waxing Crescent", emoji: "🌒" };
-    if (phase < 96) return { name: "First Quarter", emoji: "🌓" };
-    if (phase < 174) return { name: "Waxing Gibbous", emoji: "🌔" };
-    if (phase < 186) return { name: "Full Moon", emoji: "🌕" };
-    if (phase < 264) return { name: "Waning Gibbous", emoji: "🌖" };
-    if (phase < 276) return { name: "Last Quarter", emoji: "🌗" };
-    return { name: "Waning Crescent", emoji: "🌘" };
+    if (phase < 6 || phase >= 354) return { name: "New Moon", emoji: "ðŸŒ‘" };
+    if (phase < 84) return { name: "Waxing Crescent", emoji: "ðŸŒ’" };
+    if (phase < 96) return { name: "First Quarter", emoji: "ðŸŒ“" };
+    if (phase < 174) return { name: "Waxing Gibbous", emoji: "ðŸŒ”" };
+    if (phase < 186) return { name: "Full Moon", emoji: "ðŸŒ•" };
+    if (phase < 264) return { name: "Waning Gibbous", emoji: "ðŸŒ–" };
+    if (phase < 276) return { name: "Last Quarter", emoji: "ðŸŒ—" };
+    return { name: "Waning Crescent", emoji: "ðŸŒ˜" };
 }
 
 function getIllumination(date) {
@@ -617,6 +617,23 @@ function findExactPhaseTime(date, targetPhase) {
                 return exactTime;
             }
         }
+    }
+    return null;
+}
+
+// Check if tomorrow has a Full Moon or New Moon
+function getTomorrowMajorPhase(date) {
+    const tomorrow = new Date(date);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowPhase = getPhaseInfo(tomorrow);
+    if (tomorrowPhase.name === "Full Moon" || tomorrowPhase.name === "New Moon") {
+        // Verify with exact phase time
+        const target = tomorrowPhase.name === "Full Moon" ? 180 : 0;
+        const exactTime = findExactPhaseTime(tomorrow, target);
+        if (exactTime) {
+            return { name: tomorrowPhase.name, emoji: tomorrowPhase.emoji, time: exactTime };
+        }
+        return { name: tomorrowPhase.name, emoji: tomorrowPhase.emoji, time: null };
     }
     return null;
 }
@@ -738,7 +755,6 @@ function resetVOCState() {
 function getVOCDayStartMs(date) {
     const d = new Date(date);
     try {
-        // Get the date components in the selected timezone
         const fmt = new Intl.DateTimeFormat('en-US', {
             timeZone: locationTimezone,
             year: 'numeric', month: '2-digit', day: '2-digit'
@@ -748,14 +764,12 @@ function getVOCDayStartMs(date) {
         const m = parseInt(parts.find(p => p.type === 'month').value) - 1;
         const dy = parseInt(parts.find(p => p.type === 'day').value);
 
-        // Build an approximate UTC midnight, then scan offsets to find true local midnight
         const approxUTC = Date.UTC(y, m, dy, 0, 0, 0);
         const testFmt = new Intl.DateTimeFormat('en-US', {
             timeZone: locationTimezone,
             hour: 'numeric', minute: 'numeric', hour12: false,
             year: 'numeric', month: '2-digit', day: '2-digit'
         });
-        // Scan from UTC-14 to UTC+14 in 15-min steps
         for (let off = -14 * 60; off <= 14 * 60; off += 15) {
             const candidate = approxUTC + off * 60000;
             const cp = testFmt.formatToParts(new Date(candidate));
@@ -768,7 +782,6 @@ function getVOCDayStartMs(date) {
             }
         }
     } catch (e) {}
-    // Fallback: browser-local midnight
     d.setHours(0, 0, 0, 0);
     return d.getTime();
 }
@@ -1014,7 +1027,6 @@ function requestVOCForDate(date, onReady) {
     return false;
 }
 
-// Pre-calculate around center date in center-out order (worker thread)
 function precalcVOCRange(centerDate, radius = VOC_PRECALC_RADIUS) {
     if (vocPrecalcWindow.tz !== locationTimezone) {
         vocPrecalcWindow = { min: null, max: null, tz: locationTimezone };
@@ -1066,7 +1078,6 @@ function getMoonVOCForDay(date) {
     }));
 }
 
-// VOC loader - non-blocking and cache-first
 function updateVOCAsync(date) {
     const vocCard = document.getElementById('voc-card');
     const vocStatus = document.getElementById('voc-status');
@@ -1094,7 +1105,7 @@ function updateVOCAsync(date) {
 function renderVOC(vocPeriods, vocCard, vocStatus, vocTiming, vocTimes) {
     if (vocPeriods.length > 0) {
         vocCard.classList.add('voc-active');
-        vocStatus.textContent = '⚠ VOC Active';
+        vocStatus.textContent = 'âš  VOC Active';
         vocStatus.className = 'voc-status active';
         vocTiming.style.display = 'block';
         vocTimes.innerHTML = vocPeriods.map((p) => {
@@ -1109,7 +1120,7 @@ function renderVOC(vocPeriods, vocCard, vocStatus, vocTiming, vocTimes) {
         }).join('');
     } else {
         vocCard.classList.remove('voc-active');
-        vocStatus.textContent = '✓ Clear';
+        vocStatus.textContent = 'âœ“ Clear';
         vocStatus.className = 'voc-status inactive';
         vocTiming.style.display = 'none';
         vocTimes.innerHTML = '';
@@ -1121,10 +1132,9 @@ function renderVOC(vocPeriods, vocCard, vocStatus, vocTiming, vocTimes) {
 // ============================================
 function getItemTimeStatus(startTime, endTime, viewDate) {
     const now = new Date();
-    // Check if viewDate is today in the selected timezone
     const viewDateStr = viewDate.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
     const nowDateStr = now.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
-    if (viewDateStr !== nowDateStr) return 'none'; // not today, no highlighting
+    if (viewDateStr !== nowDateStr) return 'none';
     if (now >= startTime && now <= endTime) return 'current';
     if (now > endTime) return 'past';
     return 'future';
@@ -1135,34 +1145,29 @@ function getItemTimeStatus(startTime, endTime, viewDate) {
 // ============================================
 const ECLIPSE_EXPLANATIONS = {
     "Total": "A Total Lunar Eclipse occurs when the Earth moves between the Sun and the Moon, and the Earth's shadow completely covers the Moon. The Moon often turns a deep red or copper color, earning it the name 'Blood Moon.'\n\nThis is a powerful time for endings, revelations, and deep emotional transformation. Secrets may come to light, and what has been hidden is revealed.\n\nTotal lunar eclipses are considered the most potent eclipse events astrologically.",
-    "Partial": "A Partial Lunar Eclipse occurs when only a portion of the Moon passes through the Earth's umbral shadow.\n\nThis brings a gentler but still significant energy of change and revelation. It may trigger partial shifts in your life — not as dramatic as a total eclipse, but still meaningful.\n\nIt's a good time to reflect on what needs to be released or adjusted.",
+    "Partial": "A Partial Lunar Eclipse occurs when only a portion of the Moon passes through the Earth's umbral shadow.\n\nThis brings a gentler but still significant energy of change and revelation. It may trigger partial shifts in your life â€” not as dramatic as a total eclipse, but still meaningful.\n\nIt's a good time to reflect on what needs to be released or adjusted.",
     "Penumbral": "A Penumbral Lunar Eclipse occurs when the Moon passes through the Earth's penumbral shadow, causing a subtle dimming.\n\nThe effects are more subtle and internal. You may feel a gentle shift in awareness or a quiet nudge to pay attention to emotional undercurrents.\n\nThis is a time for quiet introspection and subtle emotional processing."
 };
 
 function findLunarEclipseForDate(date) {
     try {
-        // Search for eclipses around this date
         const searchStart = new Date(date);
         searchStart.setHours(0, 0, 0, 0);
         const searchEnd = new Date(date);
         searchEnd.setHours(23, 59, 59, 999);
         
-        // Search from 2 days before to catch eclipses that span midnight
         const scanStart = new Date(searchStart.getTime() - 2 * 86400000);
         let eclipse = Astronomy.SearchLunarEclipse(scanStart);
         
-        // Check up to 3 eclipses to find one on this date
         for (let i = 0; i < 3; i++) {
             if (!eclipse) break;
             const peakDate = eclipse.peak.date;
-            // Check if the eclipse peak falls on this day in the selected timezone
             const peakDateStr = peakDate.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
             const targetDateStr = date.toLocaleDateString('en-US', { timeZone: locationTimezone, year: 'numeric', month: '2-digit', day: '2-digit' });
             
             if (peakDateStr === targetDateStr) {
                 return eclipse;
             }
-            // If eclipse is past this date, stop searching
             if (peakDate > searchEnd && peakDate.getTime() - searchEnd.getTime() > 86400000) break;
             eclipse = Astronomy.NextLunarEclipse(eclipse.peak);
         }
@@ -1195,16 +1200,16 @@ function getEclipseTypeName(kind) {
 
 function getEclipseEmoji(kind) {
     switch (kind) {
-        case 'total': return '🌑';
-        case 'partial': return '🌘';
-        case 'penumbral': return '🌗';
-        default: return '🌒';
+        case 'total': return 'ðŸŒ‘';
+        case 'partial': return 'ðŸŒ˜';
+        case 'penumbral': return 'ðŸŒ—';
+        default: return 'ðŸŒ’';
     }
 }
 
 
 const ALL_PLANETS_LIST = ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
-const PLANET_EMOJIS = { Mercury: '☿', Venus: '♀', Mars: '♂', Jupiter: '♃', Saturn: '♄', Uranus: '⛢', Neptune: '♆', Pluto: '♇' };
+const PLANET_EMOJIS = { Mercury: 'â˜¿', Venus: 'â™€', Mars: 'â™‚', Jupiter: 'â™ƒ', Saturn: 'â™„', Uranus: 'â›¢', Neptune: 'â™†', Pluto: 'â™‡' };
 
 function isMercuryRetrograde(date) {
     return isPlanetRetrograde('Mercury', toJD(date));
@@ -1244,7 +1249,6 @@ function getMoonRiseSet(date) {
 }
 
 async function getLocationByIP() {
-    // Try ipapi.co
     try {
         const r1 = await fetch('https://ipapi.co/json/');
         const d1 = await r1.json();
@@ -1252,7 +1256,6 @@ async function getLocationByIP() {
             return { lat: d1.latitude, lon: d1.longitude, name: `${d1.city}, ${d1.country_name}`, timezone: d1.timezone };
         }
     } catch (e) { console.log('ipapi.co failed'); }
-    // Fallback: ip-api.com
     try {
         const r2 = await fetch('http://ip-api.com/json/?fields=lat,lon,city,country,timezone');
         const d2 = await r2.json();
@@ -1260,7 +1263,6 @@ async function getLocationByIP() {
             return { lat: d2.lat, lon: d2.lon, name: `${d2.city}, ${d2.country}`, timezone: d2.timezone };
         }
     } catch (e) { console.log('ip-api.com failed'); }
-    // Fallback: ipinfo.io
     try {
         const r3 = await fetch('https://ipinfo.io/json');
         const d3 = await r3.json();
@@ -1291,21 +1293,6 @@ function createStarBackground() {
         star.style.setProperty('--delay', Math.random() * 5 + 's');
         container.appendChild(star);
     }
-    
-    setInterval(() => {
-        if (Math.random() > 0.7) {
-            createShootingStar(container);
-        }
-    }, 3000);
-}
-
-function createShootingStar(container) {
-    const star = document.createElement('div');
-    star.className = 'shooting-star';
-    star.style.left = Math.random() * 70 + '%';
-    star.style.top = Math.random() * 30 + '%';
-    container.appendChild(star);
-    setTimeout(() => star.remove(), 1000);
 }
 
 async function initLocationSelector() {
@@ -1314,7 +1301,7 @@ async function initLocationSelector() {
     
     const detectOption = document.createElement('option');
     detectOption.value = 'detect';
-    detectOption.textContent = '📍 Detecting your location...';
+    detectOption.textContent = 'ðŸ“ Detecting your location...';
     locationSelect.appendChild(detectOption);
     
     CITIES.forEach((city, index) => {
@@ -1327,7 +1314,7 @@ async function initLocationSelector() {
     const ipLocation = await getLocationByIP();
     
     if (ipLocation) {
-        detectOption.textContent = `📍 ${ipLocation.name} (Auto-detected)`;
+        detectOption.textContent = `ðŸ“ ${ipLocation.name} (Auto-detected)`;
         detectOption.dataset.lat = ipLocation.lat;
         detectOption.dataset.lon = ipLocation.lon;
         detectOption.dataset.name = ipLocation.name;
@@ -1351,7 +1338,7 @@ async function initLocationSelector() {
             }
         }
     } else {
-        detectOption.textContent = '⚠️ Please select your location';
+        detectOption.textContent = 'âš ï¸ Please select your location';
         detectOption.disabled = true;
         const savedLocation = localStorage.getItem('selectedLocation');
         if (savedLocation && savedLocation !== 'detect') {
@@ -1361,7 +1348,6 @@ async function initLocationSelector() {
                 updateLocationFromCity(savedIndex);
             }
         } else {
-            // Try matching browser timezone to a city
             const browserTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const tzMatch = CITIES.findIndex(c => c.tz === browserTZ);
             if (tzMatch >= 0) {
@@ -1424,7 +1410,6 @@ function updateDailyView() {
     document.getElementById('selected-date').textContent = formatDateInTZ(date);
     document.getElementById('return-today').style.display = isToday ? 'none' : 'block';
     
-    // Fix 3: Update card date labels
     const cardDateLabel = formatCardDateLabel(date);
     document.getElementById('phase-card-date').textContent = cardDateLabel;
     document.getElementById('mansion-card-date').textContent = cardDateLabel;
@@ -1461,6 +1446,20 @@ function updateDailyView() {
         document.getElementById('exact-phase-time').textContent = formatTimeInTZ(nearestPhase.time);
     } else {
         exactPhaseBox.style.display = 'none';
+    }
+    
+    // Tomorrow's Full/New Moon notice
+    const tomorrowPhaseBox = document.getElementById('tomorrow-phase-box');
+    const tomorrowPhase = getTomorrowMajorPhase(date);
+    if (tomorrowPhase) {
+        tomorrowPhaseBox.style.display = 'block';
+        let label = `${tomorrowPhase.emoji} ${tomorrowPhase.name} tomorrow`;
+        if (tomorrowPhase.time) {
+            label += ` at ${formatTimeInTZ(tomorrowPhase.time)}`;
+        }
+        document.getElementById('tomorrow-phase-label').textContent = label;
+    } else {
+        tomorrowPhaseBox.style.display = 'none';
     }
     
     // Moon Rise/Set
@@ -1512,7 +1511,7 @@ function updateDailyView() {
         allMansionsContainer.appendChild(mansionItem);
     });
     
-    // VOC - load asynchronously to keep UI responsive
+    // VOC
     updateVOCAsync(date);
     
     // Eclipse
@@ -1545,7 +1544,7 @@ function updateDailyView() {
     const mercuryRetro = isMercuryRetrograde(date);
     if (!mercuryRetro) {
         mercuryStatus.style.display = 'block';
-        mercuryStatus.textContent = '☿ Mercury is Direct ✓';
+        mercuryStatus.textContent = 'â˜¿ Mercury is Direct âœ“';
         mercuryStatus.onclick = () => showRetroDialog('Mercury', false);
     } else {
         mercuryStatus.style.display = 'none';
@@ -1650,16 +1649,59 @@ function updateMonthlyCalendar() {
         const dayEclipse = findLunarEclipseForDate(date);
         const eclipseInd = dayEclipse ? '<div class="day-eclipse-indicator">' + getEclipseEmoji(dayEclipse.kind) + '</div>' : '';
         
+        // Check if tomorrow has Full/New Moon
+        const tomorrowPhase = getTomorrowMajorPhase(date);
+        const tomorrowInd = tomorrowPhase ? `<div class="day-tomorrow-phase">${tomorrowPhase.emoji} tmrw</div>` : '';
+        
         cell.innerHTML = `
             <div class="day-number">${day}</div>
             <div class="day-phase">${phaseInfo.emoji}</div>
             <div class="day-signs">${signEmojis}</div>
             <div class="day-mansions">${mansionTransitions.length > 1 ? mansionTransitions.length + ' mansions' : ''}</div>
             ${eclipseInd}
+            ${tomorrowInd}
         `;
         cell.addEventListener('click', () => showDayDialog(date));
         container.appendChild(cell);
     }
+}
+
+// ============================================
+// MONTH PICKER
+// ============================================
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function showMonthPicker() {
+    monthPickerYear = currentMonth.getFullYear();
+    renderMonthPickerGrid();
+    document.getElementById('month-picker-dialog').style.display = 'flex';
+}
+
+function renderMonthPickerGrid() {
+    document.getElementById('month-picker-year').textContent = monthPickerYear;
+    const grid = document.getElementById('month-picker-grid');
+    grid.innerHTML = '';
+    
+    const now = new Date();
+    const currentY = now.getFullYear();
+    const currentM = now.getMonth();
+    
+    MONTH_NAMES.forEach((name, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'month-picker-btn';
+        btn.textContent = name;
+        
+        if (monthPickerYear === currentY && idx === currentM) {
+            btn.classList.add('current-month');
+        }
+        
+        btn.addEventListener('click', () => {
+            currentMonth = new Date(monthPickerYear, idx, 1);
+            updateMonthlyCalendar();
+            document.getElementById('month-picker-dialog').style.display = 'none';
+        });
+        grid.appendChild(btn);
+    });
 }
 
 // ============================================
@@ -1679,7 +1721,6 @@ function showDayDialog(date) {
     document.getElementById('day-dialog').style.display = 'flex';
 }
 
-// Fix 2: Updated day dialog with moon phase timing
 function updateDayDialogContent() {
     const date = dayDialogDate;
     const phaseInfo = getPhaseInfo(date);
@@ -1693,14 +1734,14 @@ function updateDayDialogContent() {
     const itemsContainer = document.getElementById('day-dialog-items');
     itemsContainer.innerHTML = '';
     
-    // Moon Phase with timing (Fix 2)
+    // Moon Phase with timing
     const phaseTargets = [0, 90, 180, 270];
-    const phaseNames = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'];
+    const phaseNamesArr = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'];
     let exactPhaseInfo = null;
     phaseTargets.forEach((target, idx) => {
         const exactTime = findExactPhaseTime(date, target);
         if (exactTime) {
-            exactPhaseInfo = { name: phaseNames[idx], time: exactTime };
+            exactPhaseInfo = { name: phaseNamesArr[idx], time: exactTime };
         }
     });
     
@@ -1716,11 +1757,28 @@ function updateDayDialogContent() {
     );
     itemsContainer.appendChild(phaseItem);
     
+    // Tomorrow's Full/New Moon notice in day dialog
+    const tomorrowPhase = getTomorrowMajorPhase(date);
+    if (tomorrowPhase) {
+        let tmrwText = `${tomorrowPhase.name} tomorrow`;
+        if (tomorrowPhase.time) {
+            tmrwText += ` at ${formatTimeInTZ(tomorrowPhase.time)}`;
+        }
+        const tmrwItem = createDayDialogItem(
+            tomorrowPhase.emoji,
+            tmrwText,
+            () => showPhaseDialog(tomorrowPhase.name)
+        );
+        tmrwItem.style.background = 'hsl(271 91% 65% / 0.1)';
+        tmrwItem.style.borderColor = 'hsl(271 91% 65% / 0.3)';
+        itemsContainer.appendChild(tmrwItem);
+    }
+    
     // Moon Mansions
     mansionTransitions.forEach(trans => {
         const mStat = getItemTimeStatus(trans.startTime, trans.endTime, date);
         const mansionItem = createDayDialogItem(
-            '🏛️',
+            'ðŸ›ï¸',
             `${trans.mansion.number}. ${trans.mansion.name} (${formatTimeInTZ(trans.startTime)} - ${formatTimeInTZ(trans.endTime)})`,
             () => showMansionDialog(trans.mansion)
         );
@@ -1762,11 +1820,11 @@ function updateDayDialogContent() {
         itemsContainer.appendChild(eclipseItem);
     }
     
-    // Moon Void of Course - Only show if there are VOC periods
+    // Moon Void of Course
     if (vocPeriods.length > 0) {
         vocPeriods.forEach(p => {
             const vocItem = createDayDialogItem(
-                '⚠️',
+                'âš ï¸',
                 `Moon VOC: ${formatTimeInTZ(p.start)} - ${formatTimeInTZ(p.end)}`,
                 () => showVOCDialog()
             );
@@ -1786,7 +1844,7 @@ function updateDayDialogContent() {
         });
     } else {
         const retroItem = createDayDialogItem(
-            '℞',
+            'â„ž',
             'No planets in retrograde',
             null
         );
@@ -1801,7 +1859,7 @@ function createDayDialogItem(icon, text, onClick) {
     item.innerHTML = `
         <span class="item-icon">${icon}</span>
         <span class="item-text">${text}</span>
-        ${onClick ? '<span class="item-arrow">›</span>' : ''}
+        ${onClick ? '<span class="item-arrow">â€º</span>' : ''}
     `;
     if (onClick) item.addEventListener('click', onClick);
     return item;
@@ -1840,7 +1898,6 @@ function initSwipeNavigation() {
         const nextBtn = card.querySelector('.swipe-btn.next');
         
         function navigateDay(direction) {
-            // Lock card height during transition to prevent size change
             const currentHeight = card.offsetHeight;
             const currentWidth = card.offsetWidth;
             card.style.minHeight = currentHeight + 'px';
@@ -1866,7 +1923,6 @@ function initSwipeNavigation() {
                 
                 setTimeout(() => {
                     card.classList.remove('swipe-enter-left', 'swipe-enter-right');
-                    // Release height/width lock after animation
                     card.style.minHeight = '';
                     card.style.maxHeight = '';
                     card.style.width = '';
@@ -1888,7 +1944,6 @@ function initSwipeNavigation() {
             });
         }
         
-        // Touch swipe - prevent page scroll during horizontal swipe
         let touchStartX = 0;
         let touchStartY = 0;
         let isSwiping = false;
@@ -1909,7 +1964,6 @@ function initSwipeNavigation() {
             const dx = e.changedTouches[0].clientX - touchStartX;
             const dy = e.changedTouches[0].clientY - touchStartY;
             
-            // If horizontal movement is dominant, prevent vertical scroll
             if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
                 isSwiping = true;
                 e.preventDefault();
@@ -1932,7 +1986,6 @@ function initSwipeNavigation() {
     });
 }
 
-// Day dialog swipe navigation
 function initDayDialogSwipe() {
     const dayDialog = document.querySelector('.day-dialog-swipeable');
     if (!dayDialog) return;
@@ -2010,7 +2063,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initDayDialogSwipe();
     setInterval(updateCurrentTime, 60000);
     
-    // Warm VOC cache around current date in worker
     precalcVOCRange(selectedDate, VOC_PRECALC_RADIUS);
     
     // Tab switching
@@ -2023,7 +2075,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Prev/Next Day buttons next to date
+    // Prev/Next Day
     document.getElementById('prev-day').addEventListener('click', navigateToPrevDay);
     document.getElementById('next-day').addEventListener('click', navigateToNextDay);
     
@@ -2044,6 +2096,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMonthlyCalendar();
     });
     
+    // Month title click -> month picker
+    document.getElementById('month-title').addEventListener('click', showMonthPicker);
+    
+    // Month picker year navigation
+    document.getElementById('month-picker-prev-year').addEventListener('click', () => {
+        monthPickerYear--;
+        renderMonthPickerGrid();
+    });
+    document.getElementById('month-picker-next-year').addEventListener('click', () => {
+        monthPickerYear++;
+        renderMonthPickerGrid();
+    });
+    
     // Day dialog navigation buttons
     document.getElementById('day-dialog-prev').addEventListener('click', navigateDayDialogPrev);
     document.getElementById('day-dialog-next').addEventListener('click', navigateDayDialogNext);
@@ -2057,7 +2122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { close: 'close-zodiac-dialog', overlay: 'zodiac-dialog' },
         { close: 'close-mercury-dialog', overlay: 'mercury-dialog' },
         { close: 'close-retro-dialog', overlay: 'retro-dialog' },
-        { close: 'close-eclipse-dialog', overlay: 'eclipse-dialog' }
+        { close: 'close-eclipse-dialog', overlay: 'eclipse-dialog' },
+        { close: 'close-month-picker', overlay: 'month-picker-dialog' }
     ];
     
     dialogClosers.forEach(({ close, overlay }) => {
