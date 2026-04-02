@@ -1,8 +1,8 @@
 
-
  <!DOCTYPE html>
 <html lang="en">
-  <link rel="manifest" href="manifest.json">
+   <link rel="manifest" href="manifest.json">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
- <!-- Favicon for browsers -->
+  <!-- Favicon for browsers -->
     <link rel="icon" href="images/app pic1.png" sizes="32x32" type="image/png">
 
     <!-- Apple touch icon for iOS home screen -->
@@ -21,8 +21,7 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
- 
-</head>
+ </head>
 <body>
     <div id="star-background"></div>
     
@@ -77,6 +76,9 @@
             <div class="exact-phase-box" id="exact-phase-box" style="display: none;">
                 <span id="exact-phase-label"></span>
                 <span class="exact-time" id="exact-phase-time"></span>
+            </div>
+            <div class="tomorrow-phase-box" id="tomorrow-phase-box" style="display: none;">
+                <span id="tomorrow-phase-label"></span>
             </div>
         </div>
     </div>
@@ -181,7 +183,7 @@
                         <path d="M15 18l-6-6 6-6"/>
                     </svg>
                 </button>
-                <div class="month-title" id="month-title">January 2025</div>
+                <div class="month-title clickable" id="month-title">January 2025</div>
                 <button class="nav-btn" id="next-month">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 18l6-6-6-6"/>
@@ -205,6 +207,24 @@
             ✦ All times displayed in local time for your selected location ✦
             <div class="footer-sub">Click on any item for detailed meanings and guidance</div>
         </footer>
+    </div>
+
+    <!-- Month Picker Dialog -->
+    <div id="month-picker-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog position month-picker-dialog-inner">
+            <button class="dialog-close" id="close-month-picker">×</button>
+            <h2 class="dialog-title">Select Month &amp; Year</h2>
+            <div class="month-picker-year-nav">
+                <button class="nav-btn" id="month-picker-prev-year">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span class="month-picker-year" id="month-picker-year">2025</span>
+                <button class="nav-btn" id="month-picker-next-year">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
+            <div class="month-picker-grid" id="month-picker-grid"></div>
+        </div>
     </div>
 
     <!-- Mansion Dialog -->
@@ -313,3 +333,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+</head>
