@@ -53,22 +53,6 @@ body {
     50% { opacity: 1; transform: scale(1.2); }
 }
 
-.shooting-star {
-    position: absolute;
-    width: 100px;
-    height: 2px;
-    background: linear-gradient(90deg, white, transparent);
-    animation: shoot 1s linear forwards;
-    opacity: 0;
-    transform: rotate(-45deg);
-}
-
-@keyframes shoot {
-    0% { opacity: 0; transform: translateX(0) rotate(-45deg); }
-    10% { opacity: 1; }
-    100% { opacity: 0; transform: translateX(-300px) rotate(-45deg); }
-}
-
 .container {
     position: relative;
     z-index: 1;
@@ -407,6 +391,18 @@ body {
     margin-left: 0.5rem;
 }
 
+/* Tomorrow phase notice */
+.tomorrow-phase-box {
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: hsl(var(--cosmic-purple) / 0.15);
+    border: 1px solid hsl(var(--cosmic-purple) / 0.3);
+    border-radius: 0.5rem;
+    color: hsl(var(--cosmic-purple));
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
 /* Rise/Set */
 .rise-set-grid {
     display: grid;
@@ -480,6 +476,7 @@ body {
 .sign-item.current-active .sign-item-name {
     color: hsl(var(--star-gold));
     font-weight: 600;
+    font-size: 1.2rem;
 }
 
 .mansion-item.current-active .mansion-item-time,
@@ -833,6 +830,13 @@ body {
     text-align: center;
 }
 
+.day-tomorrow-phase {
+    font-size: 0.45rem;
+    color: hsl(var(--cosmic-purple));
+    text-align: center;
+    line-height: 1.1;
+}
+
 /* Footer */
 .footer {
     margin-top: 1.5rem;
@@ -1052,6 +1056,65 @@ body {
     overflow: hidden;
 }
 
+/* Month Picker */
+.month-picker-dialog-inner {
+    max-width: 350px;
+}
+
+.month-picker-year-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.month-picker-year {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, hsl(var(--moon-silver)), hsl(var(--star-gold)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 80px;
+    text-align: center;
+}
+
+.month-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.month-picker-btn {
+    padding: 0.6rem 0.5rem;
+    background: hsl(var(--muted) / 0.3);
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    color: hsl(var(--foreground));
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.month-picker-btn:hover {
+    background: hsl(var(--muted));
+    transform: scale(1.05);
+}
+
+.month-picker-btn.current-month {
+    background: hsl(var(--accent) / 0.2);
+    border-color: hsl(var(--accent));
+    box-shadow: 0 0 8px hsl(var(--accent) / 0.3);
+}
+
+.month-picker-btn.past-month {
+    opacity: 0.4;
+}
+
 /* Responsive - Mobile First */
 @media (max-width: 480px) {
     .container {
@@ -1088,7 +1151,8 @@ body {
     
     .day-mansions,
     .day-signs,
-    .day-eclipse-indicator {
+    .day-eclipse-indicator,
+    .day-tomorrow-phase {
         display: none;
     }
     
