@@ -3094,6 +3094,65 @@ function navigateDayDialogNext() {
     }
 }
 
+// Swipe navigation for the Monthly Calendar view.
+// Swipe LEFT  -> next month
+// Swipe RIGHT -> previous month
+function initCalendarSwipe() {
+    const calendarView = document.getElementById('calendar-view');
+    if (!calendarView)
+        return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isSwiping = false;
+    let swipeHandled = false;
+
+    calendarView.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].clientX;
+        touchStartY = e.changedTouches[0].clientY;
+        isSwiping = false;
+        swipeHandled = false;
+    }, {
+        passive: true
+    });
+
+    calendarView.addEventListener('touchmove', (e) => {
+        if (swipeHandled)
+            return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+
+        // Treat as horizontal swipe only when X movement clearly dominates Y
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+            isSwiping = true;
+            // Prevent the page from horizontally scrolling while swiping the calendar
+            e.preventDefault();
+        }
+    }, {
+        passive: false
+    });
+
+    calendarView.addEventListener('touchend', (e) => {
+        if (swipeHandled)
+            return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+
+        if (isSwiping && Math.abs(dx) > 50) {
+            swipeHandled = true;
+            if (dx < 0) {
+                // Swipe left -> advance to next month
+                currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+            } else {
+                // Swipe right -> go back to previous month
+                currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+            }
+            updateMonthlyCalendar();
+        }
+    }, {
+        passive: true
+    });
+}
+
 // ============================================
 // DAY NAVIGATION
 // ============================================
@@ -3169,6 +3228,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Day dialog navigation buttons
     document.getElementById('day-dialog-prev').addEventListener('click', navigateDayDialogPrev);
     document.getElementById('day-dialog-next').addEventListener('click', navigateDayDialogNext);
+
+    // Monthly calendar swipe navigation: swipe left -> next month, swipe right -> previous month
+    initCalendarSwipe();
 
     // Close dialogs
     const dialogClosers = [
